@@ -40,6 +40,9 @@ Your journal now lives on your laptop. You need Google Chrome or Microsoft Edge.
    - Turn on "Log each weekday's market news automatically" if you want it done for you
      after the New York close while the app is open.
    - Red-folder USD events from the free ForexFactory calendar show without a key.
+   - With a key, Edge Ledger also looks up earnings dates for your watchlist about once a week
+     (a few cents). Edit the tickers in Settings > Your lists. A report after the close shows
+     on the next trading day.
 
 
 BRINGING IN YOUR OLD JOURNAL (OneNote and Notion)
