@@ -1,0 +1,5 @@
+# Personal journal data and exports stay off GitHub
+Journal/
+*.csv
+*.pdf
+*.zip

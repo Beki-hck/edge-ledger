@@ -1,0 +1,62 @@
+EDGE LEDGER - DESKTOP VERSION
+=============================
+
+Your journal now lives on your laptop. You need Google Chrome or Microsoft Edge.
+
+
+1. PUT THE APP SOMEWHERE SAFE
+   - Make a folder called "Edge Ledger" in Documents.
+   - Put "Edge Ledger.html" inside it.
+
+
+2. OPEN IT
+   - Right-click "Edge Ledger.html", choose Open with, then Google Chrome.
+   - Click "Choose my folder".
+   - In the window that opens, go to Documents > Edge Ledger, click "New folder",
+     name it "Edge Ledger Data", and select it.
+   - When Chrome asks, allow it to save changes. Pick "Allow on every visit" if it's offered.
+
+   Your trades, journal, screenshots and news are saved in "Edge Ledger Data" as normal files.
+   Chrome remembers the folder. If it ever asks again, click "Open my journal".
+
+
+3. MAKE IT FEEL LIKE AN APP (optional)
+   - Bookmark it: press Ctrl+D (Cmd+D on Mac) while it's open.
+   - Or pin the tab: right-click the tab and choose Pin.
+
+
+4. BRING OVER YOUR TRADES FROM EDGE LEDGER ONLINE
+   - Open Edge Ledger on claude.ai, go to Settings, and click "Export for desktop".
+     Save the .zip file.
+   - In the desktop app, go to Settings and click "Restore or move in from a file".
+     Pick the .zip.
+   - Your trades, journal, playbooks, accounts, news log and screenshots all come across.
+
+
+5. COACH AND AUTOMATIC NEWS (optional, needs a Claude API key)
+   - Go to console.anthropic.com, sign in, add some credit, and create an API key.
+   - In Edge Ledger, go to Settings > Claude, paste the key, and click Save key.
+   - Costs: a coach answer is a few cents, and a day's news log is roughly 10 to 30 cents.
+   - Turn on "Log each weekday's market news automatically" if you want it done for you
+     after the New York close while the app is open.
+   - Red-folder USD events from the free ForexFactory calendar show without a key.
+
+
+BRINGING IN YOUR OLD JOURNAL (OneNote and Notion)
+   - Trades > Import trades, then pick OneNote or Notion at the top.
+     (Or Journal > "Bring in my old journal".)
+   - OneNote: choose "OneNote journal.txt", check the list, then click Bring in.
+   - Notion: choose "Notion export_all.csv", check the preview, then click Bring in.
+   - Old trades go into a closed account called "Past trades (old journal)".
+   - Running it again is safe: anything already brought in is skipped.
+
+
+BACKUPS
+   - Edge Ledger keeps one copy of your journal per day in "Edge Ledger Data/backups"
+     (the last 30 days).
+   - To back up everything, including screenshots, copy the whole "Edge Ledger Data" folder
+     to a USB drive.
+   - Or keep the folder inside Google Drive or OneDrive on your computer so it's backed up
+     automatically.
+
+Only open Edge Ledger in one tab at a time.
