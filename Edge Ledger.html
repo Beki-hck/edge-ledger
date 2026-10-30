@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Edge Ledger</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ea8ff'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23061024' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z'/%3E%3Cpath d='M12 6.5V20'/%3E%3Cpath d='M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
@@ -383,6 +384,14 @@ details.more.panel { padding: 14px 18px; }
 .shot .shot-missing[hidden] { display: none; }
 .keyrow { display: flex; gap: 8px; flex-wrap: wrap; }
 .keyrow input { flex: 1 1 220px; width: auto; }
+.mr-row { display: flex; gap: 6px; align-items: flex-start; }
+.mr-row .num, .mr-row button { margin-top: 7px; }
+.mr-row .num { color: var(--muted); min-width: 1.4em; text-align: right; font-size: 0.85rem; }
+.mr-row textarea { flex: 1 1 auto; width: auto; min-height: 2.4em; resize: none; field-sizing: content; line-height: 1.45; }
+.mr-limits { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.mr-limits .field { flex: 1 1 170px; }
+#myRulesPanel { scroll-margin-top: 140px; }
+.mr-row button { flex: none; }
 .switch { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; cursor: pointer; }
 .switch input { margin-top: 4px; }
 </style>
@@ -391,14 +400,14 @@ details.more.panel { padding: 14px 18px; }
 
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Open your journal folder">
   <div class="panel">
-    <div class="brandline"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 6-8"/><path d="M15 6h3v3"/></svg></span>Edge Ledger</div>
+    <div class="brandline"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z"/><path d="M12 6.5V20"/><path d="M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7"/></svg></span>Edge Ledger</div>
     <div class="stack" id="gateBody"><p class="muted">Opening your journal…</p></div>
   </div>
 </div>
 
 <header class="top">
   <div class="wrap topbar">
-    <div class="brand"><h1><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 3 6-8"/><path d="M15 6h3v3"/></svg></span>Edge Ledger</h1><select id="acctSelect" aria-label="Account"></select></div>
+    <div class="brand"><h1><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z"/><path d="M12 6.5V20"/><path d="M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7"/></svg></span>Edge Ledger</h1><select id="acctSelect" aria-label="Account"></select></div>
     <nav class="tabs" role="tablist" id="tabs">
       <button role="tab" data-tab="dash" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></button>
       <button role="tab" data-tab="trades" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Trades</span></button>
@@ -819,8 +828,29 @@ details.more.panel { padding: 14px 18px; }
         <div id="rules"></div>
       </div>
       <div class="panel">
-        <div class="panel-head"><h2>Today's guardrails</h2><span class="label">From your own rules</span></div>
+        <div class="panel-head"><h2>Today's guardrails</h2><button type="button" class="btn-small" data-mr-goto>Edit my rules</button></div>
         <div id="guards"></div>
+      </div>
+    </div>
+    <div class="panel" id="myRulesPanel">
+      <div class="panel-head"><h2>My rules</h2><span class="label" id="mrAcct"></span></div>
+      <div class="stack" style="gap:18px">
+        <div class="stack">
+          <span class="flabel">Daily limits</span>
+          <div class="mr-limits">
+            <div class="field"><label for="mrMaxTrades">Max trades per day</label><input id="mrMaxTrades" inputmode="numeric" placeholder="No limit"></div>
+            <div class="field"><label for="mrMaxLosses">Stop after this many losses a day</label><input id="mrMaxLosses" inputmode="numeric" placeholder="1"></div>
+            <div class="field"><label for="mrRisk">Risk per trade (%)</label><input id="mrRisk" inputmode="decimal" placeholder="0.5"></div>
+            <button type="button" class="btn-primary" id="mrSave">Save limits</button>
+          </div>
+          <p class="calc">The dashboard counts your trades left from these, warns you when you hit one, and flags trades over the limit. Leave max trades empty for no limit.</p>
+        </div>
+        <div class="stack">
+          <span class="flabel">My written rules: your "Before you trade" checklist in the journal</span>
+          <div class="stack" id="mrList"></div>
+          <form id="mrAdd" class="keyrow"><input id="mrNew" maxlength="300" placeholder="Add a rule, e.g. Only 2 trades a day" aria-label="New rule"><button type="submit">Add rule</button></form>
+          <p class="calc">Click a rule to change its wording. Changes save when you click away or press Enter.</p>
+        </div>
       </div>
     </div>
     <div class="grid2">
@@ -1676,6 +1706,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     renderTopTools(); renderDash(list, acc); renderAlert(acc, list); renderReview(list); renderGate(acc, list); renderTrades(); renderPlaybooks(); renderDayList(); renderWeek(); renderWeekList(); renderInsights(list); fillDatalists();
     if (!$("view-journal").hidden && !$("jDaily").hidden) loadDay($("jDate").value || today(), true);
     if (!$("view-settings").hidden) renderSettings();
+    renderChecks();
   }
   function renderAccountSelect() {
     const acc = activeAccount(), sel = $("acctSelect");
@@ -1803,7 +1834,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
 
   // ---------- pre-trade check (journal) and guardrails (Settings) ----------
-  const GATE = [
+  const DEFAULT_GATE = [
     ["news", "No NFP, CPI or FOMC today or tomorrow, and no Fed or Trump speech in my window"],
     ["window", "It's NY AM, not lunch, and not right before a new 15m or 1H candle"],
     ["ath", "I'm not shorting into all-time highs"],
@@ -1811,6 +1842,8 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     ["risk", "Same risk as always. No full port, no adding while red"],
     ["be", "Breakeven only at my written rule, not because I'm nervous"],
   ];
+  const myRules = () => (Array.isArray(S.settings.myRules) ? S.settings.myRules : DEFAULT_GATE.map(([id, text]) => ({ id, text })));
+  const gateIds = () => myRules().map((r) => r.id);
   // The dashboard shows one slim line, only when a rule needs attention. The full rules live in Settings.
   function dashAlerts(acc, list) {
     if (acc.status && acc.status !== "active") return [];
@@ -2428,9 +2461,19 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   // ---------- journal: daily ----------
   const BIAS = ["Bullish", "Bearish", "Neutral / range"], DAY_MARKETS = ["ES", "NQ", "Dow", "Gold", "Silver"], DAY_RESULTS = ["Win", "Loss", "BE", "No trade"], DAY_KINDS = ["Live", "Mock", "Backtest"], DAY_IMPORTANCE = ["1", "2", "3"];
   $("jMood").innerHTML = MOODS.map((m, i) => `<label><input type="radio" name="mood" id="mood${i + 1}" value="${i + 1}">${m}</label>`).join("");
-  $("jChecks").innerHTML = GATE.map(([k, txt]) => `<label><input type="checkbox" id="j-${k}" value="${k}"><span>${esc(txt)}</span></label>`).join("");
   let loadedDay = null, dayShots = [], dayDirty = false;
   const checkedVals = (id) => [...document.querySelectorAll(`#${id} input:checked`)].map((c) => c.value);
+  // Rebuilt only when the rules change; ticks already made stay ticked.
+  let checksSig = null;
+  function renderChecks() {
+    const rules = myRules(), sig = JSON.stringify(rules);
+    if (sig === checksSig) return;
+    checksSig = sig;
+    const on = new Set(checkedVals("jChecks"));
+    $("jChecks").innerHTML = rules.length ? rules.map((r) => `<label><input type="checkbox" value="${esc(r.id)}" ${on.has(r.id) ? "checked" : ""}><span>${esc(r.text)}</span></label>`).join("")
+      : `<span class="calc">No rules written yet. Add yours in Settings, under My rules.</span>`;
+    updatePrePill();
+  }
   const pickOne = (id, prefix, values, cur) => ($(id).innerHTML = chipList(prefix, values, cur ? [cur] : []));
   // Chip groups marked data-single hold one choice; clicking the chosen chip again clears it.
   document.addEventListener("change", (e) => {
@@ -2440,8 +2483,8 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   });
   const syncNoTrade = () => ($("jNoTradeWhy").hidden = checkedVals("jResult")[0] !== "No trade");
   function updatePrePill() {
-    const n = GATE.filter(([k]) => $("j-" + k).checked).length, st = num(document.querySelector("#jMood input:checked")?.value);
-    const [c, txt] = st && st < 3 ? ["bad", "Sit out or half risk"] : n === GATE.length ? ["ok", "Ready to trade"] : ["warn", `${n} of ${GATE.length} checked`];
+    const ids = gateIds(), on = checkedVals("jChecks"), n = ids.filter((k) => on.includes(k)).length, st = num(document.querySelector("#jMood input:checked")?.value);
+    const [c, txt] = st && st < 3 ? ["bad", "Sit out or half risk"] : !ids.length ? ["", "No checklist yet"] : n === ids.length ? ["ok", "Ready to trade"] : ["warn", `${n} of ${ids.length} checked`];
     $("jPrePill").className = "pill " + c; $("jPrePill").textContent = txt;
   }
   $("jPre").addEventListener("change", updatePrePill);
@@ -2457,7 +2500,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     document.querySelectorAll("#jMood input").forEach((r) => (r.checked = String(mood) === r.value));
     pickOne("jBias", "jb", BIAS, d.bias === "No trade day" ? "" : d.bias || "");
     $("jPlan").value = d.plan ?? "";
-    GATE.forEach(([k]) => ($("j-" + k).checked = (g.checks || []).includes(k)));
+    renderChecks(); document.querySelectorAll("#jChecks input").forEach((c) => (c.checked = (g.checks || []).includes(c.value)));
     $("jMarkets").innerHTML = chipList("jm", DAY_MARKETS, d.markets || []);
     pickOne("jResult", "jr", DAY_RESULTS, d.result || (d.noTrade || d.bias === "No trade day" ? "No trade" : ""));
     pickOne("jKind", "jk", DAY_KINDS, d.kind || "");
@@ -2492,7 +2535,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
   function saveDay(quiet) {
     const date = loadedDay || today(), prev = S.days.get(date) || {}, result = checkedVals("jResult")[0] || "";
-    const gate = { ...(prev.gate || {}), state: num(document.querySelector("#jMood input:checked")?.value), checks: GATE.map(([k]) => k).filter((k) => $("j-" + k).checked), at: Date.now() };
+    const gate = { ...(prev.gate || {}), state: num(document.querySelector("#jMood input:checked")?.value), checks: [...((prev.gate || {}).checks || []).filter((k) => !gateIds().includes(k)), ...checkedVals("jChecks")], at: Date.now() };
     const d = { ...prev, id: date, date, mood: gate.state, bias: checkedVals("jBias")[0] || "", plan: $("jPlan").value.trim(),
       markets: checkedVals("jMarkets"), result, kind: checkedVals("jKind")[0] || "", importance: checkedVals("jImportance")[0] || "",
       noTrade: result === "No trade", restReason: result === "No trade" ? $("jRestReason").value : "",
@@ -2609,11 +2652,12 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const week = S.weeks.get(curWeek);
     return [
       `ACCOUNT: ${acc.name} (${acc.firm}, ${PRESET_NAMES[acc.preset] || "custom"}), start balance $${acc.startBalance}, start date ${acc.startDate || "n/a"}, profit target ${acc.targetPct}%, max daily loss ${acc.dailyLossPct}%, max overall loss ${acc.maxLossPct}%, planned risk ${acc.riskPct}% per trade, max ${acc.maxTrades} trades/day. Today is ${today()}.`,
+      `MY RULES: ${myRules().map((r) => r.text).join("; ") || "none written"}.`,
       `ACCOUNT TOTALS: ${s.n} trades, net $${s.net.toFixed(2)}, win rate ${fmtPct(s.winRate)}, profit factor ${fmtPf(s.pf)}, avg R ${fmtRraw(s.avgR)}, discipline score ${d.score ?? "n/a"}/100.`,
       pbs.length ? `PLAYBOOKS:\n${pbs.map((p) => `- ${p.name}: ${p.description || ""} Rules: ${(p.rules || []).join("; ")}`).join("\n")}` : "PLAYBOOKS: none written yet.",
       `TRADES (${scope === "week" ? `week of ${curWeek}` : `latest ${trades.length}`}):\n${trades.map(tradeLine).join("\n") || "none"}`,
       (() => { const ms = [...S.market.values()].filter((m) => m.date >= from).sort((a, b) => a.date.localeCompare(b.date)).slice(-25); return ms.length ? `MARKET LOG:\n${ms.map((m) => `${m.date}: ${m.summary || ""} moves:${Object.entries(m.moves || {}).map(([k, v]) => `${k} ${v}`).join(", ")} events:${(m.events || []).map((e) => `${e.name}${e.actual ? ` ${e.actual}` : ""}${e.forecast ? ` vs ${e.forecast}` : ""}`).join("; ")}`).join("\n")}` : ""; })(),
-      days.length ? `DAILY JOURNAL:\n${days.map((x) => `${x.date}${x.noTrade ? ` NO-TRADE DAY (${x.restReason || "no reason"})` : ""} grade:${x.grade || "-"} news:${(x.news || []).join("/") || "-"} ${x.newsNotes ? `newsNotes:"${oneLine(x.newsNotes, 160)}" ` : ""}mood:${x.mood || "?"} bias:${x.bias || "-"}${x.result ? ` result:${x.result}` : ""}${x.kind ? ` type:${x.kind}` : ""}${(x.markets || []).length ? ` markets:${x.markets.join("/")}` : ""}${x.gate ? ` pre-trade-checks:${(x.gate.checks || []).length}/${GATE.length}` : ""}${(x.feelBefore || []).length ? ` felt-before:${x.feelBefore.join("/")}` : ""}${(x.feelAfter || []).length ? ` felt-after:${x.feelAfter.join("/")}` : ""} plan:"${oneLine(x.plan, 200)}" thoughts:"${oneLine(x.thoughts ?? x.review, 400)}"${(x.good || []).length ? ` did-well:"${oneLine(x.good.join("; "), 300)}"` : ""}${(x.bad || []).length ? ` did-badly:"${oneLine(x.bad.join("; "), 300)}"` : ""} lesson:"${oneLine(x.lesson, 300)}"`).join("\n")}` : "",
+      days.length ? `DAILY JOURNAL:\n${days.map((x) => `${x.date}${x.noTrade ? ` NO-TRADE DAY (${x.restReason || "no reason"})` : ""} grade:${x.grade || "-"} news:${(x.news || []).join("/") || "-"} ${x.newsNotes ? `newsNotes:"${oneLine(x.newsNotes, 160)}" ` : ""}mood:${x.mood || "?"} bias:${x.bias || "-"}${x.result ? ` result:${x.result}` : ""}${x.kind ? ` type:${x.kind}` : ""}${(x.markets || []).length ? ` markets:${x.markets.join("/")}` : ""}${x.gate && gateIds().length ? ` pre-trade-checks:${(x.gate.checks || []).filter((k) => gateIds().includes(k)).length}/${gateIds().length}` : ""}${(x.feelBefore || []).length ? ` felt-before:${x.feelBefore.join("/")}` : ""}${(x.feelAfter || []).length ? ` felt-after:${x.feelAfter.join("/")}` : ""} plan:"${oneLine(x.plan, 200)}" thoughts:"${oneLine(x.thoughts ?? x.review, 400)}"${(x.good || []).length ? ` did-well:"${oneLine(x.good.join("; "), 300)}"` : ""}${(x.bad || []).length ? ` did-badly:"${oneLine(x.bad.join("; "), 300)}"` : ""} lesson:"${oneLine(x.lesson, 300)}"`).join("\n")}` : "",
       scope === "week" && week ? `MY WEEKLY REVIEW: grade ${week.grade || "-"}; went well: ${oneLine(week.well, 600) || "-"}; went wrong: ${oneLine(week.wrong, 600) || "-"}; focus: ${oneLine(week.focus, 300) || "-"}` : "",
     ].filter(Boolean).join("\n\n");
   }
@@ -3567,6 +3611,7 @@ ${String(h).trim()}`;
     // Reload the form when the account it shows changed underneath it (journal finished loading, or saved elsewhere).
     if (editingAcc === null || (editingAcc && !S.accounts.has(editingAcc) && editingAcc !== "new")) loadAccountForm(act.id);
     else if (editingAcc !== "new" && S.accounts.get(editingAcc) !== accFormObj && !$("acctForm").contains(document.activeElement)) loadAccountForm(editingAcc);
+    renderMyRules();
     renderListEditor("listEmotions", "emotions", "Feelings", "Add a feeling");
     renderListEditor("listMistakes", "mistakes", "Mistakes", "Add a mistake");
     renderListEditor("listTags", "tags", "Tags", "Add a tag");
@@ -3630,6 +3675,76 @@ ${String(h).trim()}`;
     const id = editingAcc; editingAcc = null;
     persist(() => backend.del("accounts", id), "Account deleted").then(() => { if (S.settings.activeAccountId === id) saveSettings({ activeAccountId: accountsSorted().find((a) => a.id !== id)?.id || "" }); });
   });
+
+  // ---------- settings: my rules ----------
+  let mrLimitsSig = "", mrListSig = "", mrDelArmed = "";
+  const mrLimitEls = ["mrMaxTrades", "mrMaxLosses", "mrRisk"];
+  function renderMyRules(force) {
+    const acc = activeAccount(), rules = myRules();
+    $("mrAcct").textContent = `Limits for ${acc.name || "this account"}`;
+    // Never overwrite what's being typed; refill when the account or its saved limits change.
+    const lsig = JSON.stringify([acc.id, acc.maxTrades, acc.maxLosses, acc.riskPct]);
+    if ((force || lsig !== mrLimitsSig) && !mrLimitEls.includes(document.activeElement?.id)) {
+      mrLimitsSig = lsig;
+      $("mrMaxTrades").value = +acc.maxTrades > 0 ? acc.maxTrades : "";
+      $("mrMaxLosses").value = acc.maxLosses ? acc.maxLosses : "";
+      $("mrRisk").value = +acc.riskPct > 0 ? acc.riskPct : "";
+    }
+    const sig = JSON.stringify([rules, mrDelArmed]);
+    if ((force || sig !== mrListSig) && !document.activeElement?.matches("#mrList textarea")) {
+      mrListSig = sig;
+      $("mrList").innerHTML = rules.length ? rules.map((r, i) => `<div class="mr-row"><span class="num">${i + 1}.</span><textarea rows="1" maxlength="300" data-mr-edit="${esc(r.id)}" aria-label="Rule ${i + 1}">${esc(r.text)}</textarea>`
+        + `<button type="button" class="btn-small" data-mr-up="${esc(r.id)}" ${i ? "" : "disabled"} aria-label="Move rule ${i + 1} up" title="Move up">↑</button>`
+        + `<button type="button" class="btn-small btn-danger" data-mr-del="${esc(r.id)}">${mrDelArmed === r.id ? "Sure?" : "Delete"}</button></div>`).join("")
+        : `<span class="calc">No written rules yet. Add your first one below.</span>`;
+    }
+  }
+  const saveRules = (rules, msg) => saveSettings({ myRules: rules }).then((ok) => { mrDelArmed = ""; renderMyRules(true); renderChecks(); updatePrePill(); if (ok && msg) toast(msg); return ok; });
+  $("mrAdd").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = $("mrNew").value.trim().replace(/\s+/g, " "); if (!text) { toast("Write the rule first."); return; }
+    if (myRules().some((r) => r.text.toLowerCase() === text.toLowerCase())) { toast("You already have that rule."); return; }
+    saveRules([...myRules(), { id: "r" + uid(), text }], "Rule added").then((ok) => { if (ok) $("mrNew").value = ""; $("mrNew").focus(); });
+  });
+  $("mrList").addEventListener("change", (e) => {
+    const inp = e.target.closest("[data-mr-edit]"); if (!inp) return;
+    const rules = myRules(), r = rules.find((x) => x.id === inp.dataset.mrEdit); if (!r) return;
+    const text = inp.value.trim().replace(/\s+/g, " ");
+    if (!text) { inp.value = r.text; toast("A rule can't be empty. Use Delete to remove it."); return; }
+    if (text === r.text) return;
+    if (rules.some((x) => x !== r && x.text.toLowerCase() === text.toLowerCase())) { inp.value = r.text; toast("You already have that rule."); return; }
+    saveRules(rules.map((x) => (x === r ? { ...x, text } : x)), "Rule saved");
+  });
+  $("mrList").addEventListener("keydown", (e) => {
+    const inp = e.target.closest("[data-mr-edit]"); if (!inp) return;
+    if (e.key === "Enter") { e.preventDefault(); inp.blur(); }
+    if (e.key === "Escape") { inp.value = myRules().find((x) => x.id === inp.dataset.mrEdit)?.text ?? inp.value; inp.blur(); }
+  });
+  $("mrList").addEventListener("focusout", (e) => { if (e.target.matches("textarea")) setTimeout(() => renderMyRules(), 0); });
+  $("mrList").addEventListener("click", (e) => {
+    const up = e.target.closest("[data-mr-up]"), del = e.target.closest("[data-mr-del]"), rules = [...myRules()];
+    if (up) {
+      const i = rules.findIndex((x) => x.id === up.dataset.mrUp); if (i < 1) return;
+      [rules[i - 1], rules[i]] = [rules[i], rules[i - 1]]; saveRules(rules);
+    } else if (del) {
+      const id = del.dataset.mrDel;
+      if (mrDelArmed !== id) { mrDelArmed = id; renderMyRules(true); return; }
+      saveRules(rules.filter((x) => x.id !== id), "Rule deleted");
+    }
+  });
+  $("mrSave").addEventListener("click", async () => {
+    const acc = activeAccount();
+    if (!S.accounts.has(acc.id)) { toast("Add an account first, under Accounts."); return; }
+    const t = $("mrMaxTrades").value.trim(), l = $("mrMaxLosses").value.trim(), r = $("mrRisk").value.trim();
+    const maxTrades = t === "" ? 0 : num(t), maxLosses = l === "" ? "" : num(l), riskPct = r === "" ? 0 : num(r);
+    if (!Number.isInteger(maxTrades) || maxTrades < 0 || maxTrades > 100) { toast("Max trades per day should be a whole number like 2. Leave it empty for no limit."); return; }
+    if (maxLosses !== "" && (!Number.isInteger(maxLosses) || maxLosses < 1 || maxLosses > 100)) { toast("Losses a day should be a whole number from 1 up."); return; }
+    if (riskPct == null || !(riskPct >= 0 && riskPct <= 100)) { toast("Risk per trade should be a percent, like 0.5."); return; }
+    const a = { ...acc, maxTrades, maxLosses, riskPct };
+    if (await persist(() => backend.put("accounts", a), "Limits saved")) { mrLimitsSig = ""; render(); }
+  });
+  mrLimitEls.forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") $("mrSave").click(); }));
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-mr-goto]")) $("myRulesPanel").scrollIntoView({ behavior: "smooth", block: "start" }); });
 
   // ---------- settings: lists ----------
   function renderListEditor(elId, key, title, placeholder) {
