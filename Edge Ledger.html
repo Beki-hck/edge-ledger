@@ -287,6 +287,7 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .pill.ok, .pill.bad, .pill.warn { border-color: transparent; }
 input, select, textarea { background: rgba(5, 9, 20, 0.6); border-color: var(--line); border-radius: 10px; color: var(--fg); transition: border-color .2s, box-shadow .2s; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,168,255,0.18); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(110,168,255,0.35); }
 select option { background: var(--surface-solid); }
 .chips label, .checklist label, .mood label { background: rgba(5, 9, 20, 0.5); border-color: var(--line); }
 .chips label:has(input:checked) { background: rgba(110,168,255,0.14); border-color: var(--accent); color: var(--fg); }
@@ -323,7 +324,7 @@ tbody tr.click:hover, .item.click:hover { background: rgba(110,168,255,0.07); }
 .kz.live .dot { background: var(--gain); box-shadow: 0 0 10px var(--gain); animation: pulse 1.6s ease-in-out infinite; }
 .kz-track { position: relative; width: 100%; height: 26px; border-radius: 8px; background: rgba(140,170,255,0.06); overflow: hidden; }
 .kz-track i { position: absolute; top: 0; bottom: 0; background: rgba(110,168,255,0.22); border-left: 1px solid rgba(110,168,255,0.5); }
-.kz-track i span { position: absolute; left: 4px; top: 4px; font-size: 0.62rem; color: var(--fg); white-space: nowrap; letter-spacing: 0.04em; }
+.kz-track i span { position: absolute; left: 4px; top: 3px; font-size: 0.72rem; font-weight: 600; color: #fff; white-space: nowrap; letter-spacing: 0.03em; padding: 0 4px; border-radius: 4px; background: rgba(5,9,20,0.75); }
 .kz-track b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--warn); box-shadow: 0 0 8px var(--warn); }
 .kz-scale { display: flex; justify-content: space-between; width: 100%; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
 @keyframes pulse { 50% { opacity: 0.35; } }
@@ -1282,6 +1283,7 @@ details.more.panel { padding: 14px 18px; }
   function gate(state, extra = "", note = "") {
     const g = $("gate");
     g.hidden = !state;
+    for (const el of document.body.children) if (el !== g && el.tagName !== "SCRIPT") el.inert = !!state;
     if (!state) return;
     const body = {
       unsupported: `<h2>Open Edge Ledger in Chrome or Edge</h2><p>Edge Ledger saves your journal as files in a folder on this computer. Only Chrome and Microsoft Edge on a computer can do that.</p><p class="calc">Right-click the Edge Ledger file, choose Open with, then Google Chrome.</p>`,
@@ -1296,6 +1298,7 @@ details.more.panel { padding: 14px 18px; }
       error: `<h2>Couldn't open your folder</h2><p>${esc(extra || "Chrome blocked access to that folder.")}</p><p class="calc">Chrome doesn't allow some folders, like Documents or Desktop themselves. Make a new folder inside them and pick that one.</p><div class="actions" style="justify-content:flex-start"><button class="btn-primary" id="gatePick">Choose a folder</button></div>`,
     }[state];
     $("gateBody").innerHTML = body;
+    g.querySelector("button")?.focus();
   }
   $("gate").addEventListener("click", async (e) => {
     if (e.target.closest("#gatePick")) pickFolder();
