@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Edge Ledger</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236ea8ff'/%3E%3Cstop offset='1' stop-color='%23a78bfa'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23061024' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z'/%3E%3Cpath d='M12 6.5V20'/%3E%3Cpath d='M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316171a'/%3E%3Cpath d='M19.5 6.5 12.5 25.5' stroke='%234cc38a' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Sora:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
 <style>
 /* Layout: a night-shift trading terminal. Glass panels float over a deep indigo field with a faint chart grid;
    a live "Today" console leads the dashboard; tabs sit in a top rail on desktop and a bottom dock on phones.
@@ -287,6 +287,7 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .pill.ok, .pill.bad, .pill.warn { border-color: transparent; }
 input, select, textarea { background: rgba(5, 9, 20, 0.6); border-color: var(--line); border-radius: 10px; color: var(--fg); transition: border-color .2s, box-shadow .2s; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,168,255,0.18); }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 3px rgba(110,168,255,0.35); }
 select option { background: var(--surface-solid); }
 .chips label, .checklist label, .mood label { background: rgba(5, 9, 20, 0.5); border-color: var(--line); }
 .chips label:has(input:checked) { background: rgba(110,168,255,0.14); border-color: var(--accent); color: var(--fg); }
@@ -323,7 +324,7 @@ tbody tr.click:hover, .item.click:hover { background: rgba(110,168,255,0.07); }
 .kz.live .dot { background: var(--gain); box-shadow: 0 0 10px var(--gain); animation: pulse 1.6s ease-in-out infinite; }
 .kz-track { position: relative; width: 100%; height: 26px; border-radius: 8px; background: rgba(140,170,255,0.06); overflow: hidden; }
 .kz-track i { position: absolute; top: 0; bottom: 0; background: rgba(110,168,255,0.22); border-left: 1px solid rgba(110,168,255,0.5); }
-.kz-track i span { position: absolute; left: 4px; top: 4px; font-size: 0.62rem; color: var(--fg); white-space: nowrap; letter-spacing: 0.04em; }
+.kz-track i span { position: absolute; left: 4px; top: 3px; font-size: 0.72rem; font-weight: 600; color: #fff; white-space: nowrap; letter-spacing: 0.03em; padding: 0 4px; border-radius: 4px; background: rgba(5,9,20,0.75); }
 .kz-track b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--warn); box-shadow: 0 0 8px var(--warn); }
 .kz-scale { display: flex; justify-content: space-between; width: 100%; font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
 @keyframes pulse { 50% { opacity: 0.35; } }
@@ -411,20 +412,121 @@ details.more.panel { padding: 14px 18px; }
 .mr-row button { flex: none; }
 .switch { display: flex; gap: 10px; align-items: flex-start; font-size: 0.9rem; cursor: pointer; }
 .switch input { margin-top: 4px; }
+
+/* ===== Quiet theme (2026-11-11): neutral graphite, one accent, no glow/glass/gradients, sentence-case headings. =====
+   Overrides the "night-shift terminal" layer above. Features and layout logic are unchanged. */
+:root {
+  --bg: #0e0f11; --bg-2: #121316;
+  --surface: #16171a; --surface-solid: #16171a; --sunk: #1c1d21;
+  --fg: #ededee; --muted: #8b8d94;
+  --line: #25272c; --line-strong: #34363c; --grid: transparent;
+  --accent: #7aa2f7; --accent-2: #7aa2f7; --accent-ink: #0e0f11; --glow: transparent;
+  --gain: #4cc38a; --loss: #e5636b; --warn: #e2a33e;
+  --gain-soft: rgba(76,195,138,0.12); --loss-soft: rgba(229,99,107,0.12); --warn-soft: rgba(226,163,62,0.12);
+  --scrim: rgba(0,0,0,0.7);
+  --font-display: "Geist", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Geist", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+body { background: var(--bg); background-image: none; font-size: 14.5px; letter-spacing: -0.005em; -webkit-font-smoothing: antialiased; }
+*, *::before, *::after { text-shadow: none !important; }
+h1, h2, h3, .coach-out h4 { font-family: var(--font-body); letter-spacing: -0.01em; }
+h2 { font-size: 0.98rem; font-weight: 600; text-transform: none; letter-spacing: -0.005em; }
+.label, .section-label, th, .cal .dow { text-transform: none; letter-spacing: 0; font-size: 0.78rem; font-weight: 500; color: var(--muted); }
+
+/* header + tabs */
+header.top { background: rgba(14,15,17,0.92); backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 1px solid var(--line); }
+.brand h1 { font-size: 0.98rem; font-weight: 600; letter-spacing: -0.01em; text-transform: none; }
+.logo { width: 24px; height: 24px; border-radius: 6px; background: var(--fg); box-shadow: none; }
+.logo svg { width: 16px; height: 16px; }
+nav.tabs button { font-weight: 500; color: var(--muted); border-radius: 6px; transition: color .12s, background-color .12s; }
+nav.tabs button:hover { color: var(--fg); background: var(--sunk); }
+nav.tabs button[aria-selected="true"] { background: var(--sunk); color: var(--fg); box-shadow: none; }
+
+/* buttons + inputs */
+button, .btn { border-radius: 7px; background: var(--surface); border: 1px solid var(--line-strong); font-weight: 500; transition: background-color .12s, border-color .12s; }
+button:hover:not(:disabled), .btn:hover { background: var(--sunk); border-color: #44464d; transform: none; }
+.btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); box-shadow: none; font-weight: 600; }
+.btn-primary:hover:not(:disabled) { background: #fff; border-color: #fff; box-shadow: none; }
+input, select, textarea { background: var(--bg-2); border: 1px solid var(--line-strong); border-radius: 7px; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: none; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; box-shadow: none; }
+
+/* panels: flat, thin borders, no glass */
+.panel, .stats, .notice { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.item { background: transparent; border-color: var(--line); border-radius: 8px; }
+tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
+.bar > i { box-shadow: none; }
+.toast { background: var(--fg); color: var(--bg); border: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+
+/* numbers: biggest, quietest thing on screen */
+.stat .v { font-family: var(--font-mono); font-weight: 500; letter-spacing: -0.02em; }
+.score .big { font-family: var(--font-mono); font-weight: 500; }
+.cal .d .g { font-family: var(--font-mono); font-weight: 600; color: var(--fg); }
+.cal .d.today { box-shadow: inset 0 0 0 1px var(--fg); }
+.cal .d.rest { border-color: transparent; }
+
+/* today console: no glow, plain greeting */
+.today::before { display: none; }
+.today .hello { font-family: var(--font-body); font-weight: 600; letter-spacing: -0.02em; }
+.today .hello span { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--fg); }
+.kz.live .dot { box-shadow: none; }
+.kz-track b { box-shadow: none; }
+.day-head .big { font-family: var(--font-body); font-weight: 600; letter-spacing: -0.02em; }
+
+/* first-run gate */
+.gate { background: var(--bg); background-image: none; }
+.gate .brandline { font-family: var(--font-body); letter-spacing: -0.01em; text-transform: none; font-weight: 600; }
+
+@media (max-width: 720px) {
+  header.top { background: var(--bg-2); }
+  nav.tabs { background: #16171a !important; backdrop-filter: none; -webkit-backdrop-filter: none; border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (min-width: 721px) {
+  nav.tabs { padding: 3px; border-radius: 9px; background: var(--bg-2); }
+  nav.tabs button { padding: 6px 9px; font-size: 0.86rem; }
+}
+.seg { border-color: var(--line-strong); border-radius: 7px; }
+.seg button[aria-pressed="true"] { background: var(--sunk); color: var(--fg); }
+.kz-track { background: var(--bg-2) !important; }
+.kz-track i { background: rgba(237,237,238,0.07); border-left: 1px solid var(--line-strong); }
+.kz-track i span { color: var(--muted); font-weight: 500; font-style: normal; background: none; letter-spacing: 0; }
+@media (min-width: 1240px) { .wrap { max-width: 1200px; } .topbar { gap: 10px 12px; } nav.tabs button { padding: 6px 8px; } }
+@media (min-width: 1300px) { .wrap { max-width: 1260px; } }
+
+/* No half-empty boxes: Insights flows like a masonry wall, empty panels hide, short panels don't stretch. */
+#view-insights .grid2 + .grid2 { display: block; columns: 2 400px; column-gap: 16px; }
+#view-insights .grid2 + .grid2 > .panel { break-inside: avoid; margin-bottom: 16px; display: block; width: 100%; }
+#view-insights .grid2 + .grid2 > .panel[style*="grid-column"] { column-span: all; }
+#view-insights .panel:has(> div[id] > p.muted:only-child) { display: none; }
+#view-insights .grid2 { align-items: start; }
+.grid2 { align-items: start; }
+.today > :first-child { align-self: center; }
+
+
+/* Wordmark logo (2026-11-11) */
+.wordmark { font-family: var(--font-body); font-weight: 600; font-size: 1.12rem; letter-spacing: -0.035em; color: var(--fg); text-transform: none; }
+.wordmark .slash { color: var(--gain); margin: 0 0.02em; }
+.gate .brandline .wordmark { font-size: 1.3rem; }
+
+/* Settings: no empty gaps. Left column stacks the short panels next to the tall account form. */
+.stack-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+#rulesPanel { align-items: stretch; }
 </style>
 </head>
 <body>
 
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Open your journal folder">
   <div class="panel">
-    <div class="brandline"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z"/><path d="M12 6.5V20"/><path d="M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7"/></svg></span>Edge Ledger</div>
+    <div class="brandline"><span class="wordmark" aria-label="Edge Ledger">edge<span class="slash" aria-hidden="true">/</span>ledger</span></div>
     <div class="stack" id="gateBody"><p class="muted">Opening your journal…</p></div>
   </div>
 </div>
 
 <header class="top">
   <div class="wrap topbar">
-    <div class="brand"><h1><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#061024" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C9.5 4.8 6 4.5 3 5.2v13.5c3-.7 6.5-.4 9 1.3 2.5-1.7 6-2 9-1.3V5.2c-3-.7-6.5-.4-9 1.3z"/><path d="M12 6.5V20"/><path d="M5.5 9h4M5.5 12h4M14.5 14l2-2.5 1.5 1.2 2-2.7"/></svg></span>Edge Ledger</h1><select id="acctSelect" aria-label="Account"></select></div>
+    <div class="brand"><h1><span class="wordmark" aria-label="Edge Ledger">edge<span class="slash" aria-hidden="true">/</span>ledger</span></h1><select id="acctSelect" aria-label="Account"></select></div>
     <nav class="tabs" role="tablist" id="tabs">
       <button role="tab" data-tab="dash" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Dashboard</span></button>
       <button role="tab" data-tab="trades" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Trades</span></button>
@@ -909,10 +1011,25 @@ details.more.panel { padding: 14px 18px; }
         </div>
       </div>
     </div>
-    <div class="grid2">
+    <div class="grid2 acct-grid">
+      <div class="stack-col">
       <div class="panel">
         <div class="panel-head"><h2>Accounts</h2><button id="acctNew">Add account</button></div>
         <div id="acctList"></div>
+      </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Prop money</h2><span class="label">Fees in, payouts out, all accounts</span></div>
+      <div id="propRoi"></div>
+    </div>
+      <div class="panel">
+        <div class="panel-head"><h2>You and your folder</h2></div>
+        <div class="stack">
+          <div class="field"><label for="sName">Your name</label><div class="keyrow"><input id="sName" placeholder="Shown in the greeting"><button id="sNameSave">Save</button></div></div>
+          <p class="calc" id="folderInfo"></p>
+          <div class="actions" style="justify-content:flex-start"><button id="folderChange">Use a different folder</button></div>
+          <p class="calc">Your folder keeps journal.json, a screenshots folder, a news folder, and a backups folder with one copy of your journal per day for the last 30 days. To back up everything, copy the whole folder, or keep it inside Google Drive or OneDrive on your computer.</p>
+        </div>
+      </div>
       </div>
       <div class="panel">
         <div class="panel-head"><h2 id="acctFormTitle">Edit account</h2></div>
@@ -947,10 +1064,6 @@ details.more.panel { padding: 14px 18px; }
       </div>
     </div>
     <div class="panel">
-      <div class="panel-head"><h2>Prop money</h2><span class="label">Fees in, payouts out, all accounts</span></div>
-      <div id="propRoi"></div>
-    </div>
-    <div class="panel">
       <div class="panel-head"><h2>Your lists</h2></div>
       <div class="grid2">
         <div class="tag-editor" id="listEmotions"></div>
@@ -959,16 +1072,6 @@ details.more.panel { padding: 14px 18px; }
         <div class="tag-editor" id="listNews"></div>
       </div>
     </div>
-    <div class="grid2">
-      <div class="panel">
-        <div class="panel-head"><h2>You and your folder</h2></div>
-        <div class="stack">
-          <div class="field"><label for="sName">Your name</label><div class="keyrow"><input id="sName" placeholder="Shown in the greeting"><button id="sNameSave">Save</button></div></div>
-          <p class="calc" id="folderInfo"></p>
-          <div class="actions" style="justify-content:flex-start"><button id="folderChange">Use a different folder</button></div>
-          <p class="calc">Your folder keeps journal.json, a screenshots folder, a news folder, and a backups folder with one copy of your journal per day for the last 30 days. To back up everything, copy the whole folder, or keep it inside Google Drive or OneDrive on your computer.</p>
-        </div>
-      </div>
       <div class="panel">
         <div class="panel-head"><h2>Claude</h2><span class="label">Coach and news log</span></div>
         <div class="stack">
@@ -980,7 +1083,6 @@ details.more.panel { padding: 14px 18px; }
           <p class="calc" id="sFFInfo"></p>
         </div>
       </div>
-    </div>
     <div class="panel">
       <div class="panel-head"><h2>Backup and moving in</h2></div>
       <p class="muted" style="margin-bottom:12px">Download everything except screenshots as one file, or bring in a backup. To move from Edge Ledger online, open it on claude.ai, go to Settings and click <strong>Export for desktop</strong>, then pick that .zip file here. Your trades, journal, playbooks, accounts, news log and screenshots all come across.</p>
@@ -1282,6 +1384,7 @@ details.more.panel { padding: 14px 18px; }
   function gate(state, extra = "", note = "") {
     const g = $("gate");
     g.hidden = !state;
+    for (const el of document.body.children) if (el !== g && el.tagName !== "SCRIPT") el.inert = !!state;
     if (!state) return;
     const body = {
       unsupported: `<h2>Open Edge Ledger in Chrome or Edge</h2><p>Edge Ledger saves your journal as files in a folder on this computer. Only Chrome and Microsoft Edge on a computer can do that.</p><p class="calc">Right-click the Edge Ledger file, choose Open with, then Google Chrome.</p>`,
@@ -1296,6 +1399,7 @@ details.more.panel { padding: 14px 18px; }
       error: `<h2>Couldn't open your folder</h2><p>${esc(extra || "Chrome blocked access to that folder.")}</p><p class="calc">Chrome doesn't allow some folders, like Documents or Desktop themselves. Make a new folder inside them and pick that one.</p><div class="actions" style="justify-content:flex-start"><button class="btn-primary" id="gatePick">Choose a folder</button></div>`,
     }[state];
     $("gateBody").innerHTML = body;
+    g.querySelector("button")?.focus();
   }
   $("gate").addEventListener("click", async (e) => {
     if (e.target.closest("#gatePick")) pickFolder();
@@ -1947,7 +2051,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     // Filtered: the curve is the running P&L of those trades from zero, with no floor or target lines.
     if (on) renderWhatIf(list, 0, null, 0); else renderWhatIf(list, bal0, maxLim, target);
     renderCalendar(list);
-    const recent = [...list].reverse().slice(0, 6);
+    const recent = [...list].reverse().slice(0, 12);
     $("recent").innerHTML = recent.length ? tradeTable(recent, true) : full.length ? `<p class="muted">No trades match your filters.</p>` : emptyState("Nothing logged yet", "Log each trade you take, or import your history from the Trades tab.", true);
     bindRows($("recent"));
   }
