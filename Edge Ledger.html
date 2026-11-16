@@ -513,6 +513,41 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 /* Settings: no empty gaps. Left column stacks the short panels next to the tall account form. */
 .stack-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
 #rulesPanel { align-items: stretch; }
+
+/* Search (v24) */
+.search-btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 8px; }
+@media (min-width: 1240px) { nav.tabs button { padding: 6px 7px; } }
+.search-btn span, .search-btn kbd { display: none; }
+.search-btn svg { width: 16px; height: 16px; flex: none; }
+.search-btn kbd { font-family: var(--font-mono); font-size: 0.72rem; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0 5px; color: var(--muted); }
+.sx { position: fixed; inset: 0; z-index: 45; background: var(--scrim); display: flex; justify-content: center; align-items: flex-start; padding: 7vh 16px 16px; }
+.sx[hidden] { display: none; }
+.sx-box { width: min(780px, 100%); max-height: 86vh; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; }
+.sx-head { padding: 10px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; }
+.sx-head > * { min-width: 0; }
+.sx-q { display: flex; align-items: center; gap: 10px; }
+.sx-q > svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.sx-q input { flex: 1; font-size: 1.05rem; border: 0; background: transparent; padding: 6px 2px; }
+.sx-q input:focus, .sx-q input:focus-visible { outline: none; box-shadow: none; border: 0; }
+.sx-q input::-webkit-search-cancel-button { display: none; }
+.sx-q input { min-width: 0; }
+#sxKinds { max-width: 100%; overflow-x: auto; }
+.sx-opts { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 0.85rem; color: var(--muted); }
+.sx-opts label { display: inline-flex; align-items: center; gap: 6px; }
+.sx-opts input[type=date] { width: auto; padding: 4px 6px; font-size: 0.82rem; }
+.sx-list { overflow-y: auto; padding: 0 6px 6px; min-height: 80px; }
+.sx-month { font-size: 0.75rem; color: var(--muted); padding: 10px 8px 4px; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.sx-hit { display: block; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 9px 10px; cursor: pointer; font: inherit; color: inherit; }
+.sx-hit:hover, .sx-hit.on { background: var(--sunk); border-color: var(--line-strong); }
+.sx-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 0.9rem; }
+.sx-top .muted { font-size: 0.82rem; }
+.sx-snip { font-size: 0.86rem; color: var(--muted); margin-top: 3px; line-height: 1.45; overflow-wrap: anywhere; }
+.sx-snip i { font-style: normal; color: var(--fg); opacity: 0.75; }
+.sx mark { background: rgba(226,163,62,0.3); color: var(--fg); border-radius: 3px; padding: 0 1px; }
+.sx-empty { padding: 22px 12px; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+.sx-more { margin: 8px auto 4px; display: block; }
+.sx-foot { border-top: 1px solid var(--line); padding: 8px 12px; font-size: 0.75rem; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sx-flash { outline: 2px solid var(--warn) !important; outline-offset: 3px; transition: outline-color 1s; }
 </style>
 </head>
 <body>
@@ -537,6 +572,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
       <button role="tab" data-tab="settings" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
     </nav>
     <div class="top-tools">
+      <button type="button" class="search-btn" id="searchBtn" aria-label="Search your journal (Ctrl+K)" title="Search your journal (Ctrl+K or /)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span>Search</span><kbd>Ctrl K</kbd></button>
       <div class="seg units" id="unitSeg" role="group" aria-label="Show results in"><button type="button" data-unit="usd" aria-pressed="true" title="Show results in dollars">$</button><button type="button" data-unit="r" aria-pressed="false" title="Show results in R">R</button></div>
       <button type="button" class="eye" id="eyeBtn" aria-pressed="false" aria-label="Hide numbers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12c0-1.5 3.5-7 9-7s9 5.5 9 7-3.5 7-9 7-9-5.5-9-7z"/><circle cx="12" cy="12" r="3"/></svg><span>Hide numbers</span></button>
     </div>
@@ -1096,6 +1132,21 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 </main>
 
 <datalist id="setupList"></datalist>
+<div class="sx" id="sx" role="dialog" aria-modal="true" aria-label="Search your journal" hidden>
+  <div class="sx-box">
+    <div class="sx-head">
+      <div class="sx-q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="sxQ" type="search" placeholder="Search your journal: words, feelings, mistakes, news…" autocomplete="off" spellcheck="false" aria-label="Search words" aria-controls="sxList"><button type="button" class="btn-small" id="sxClose" aria-label="Close search">Esc</button></div>
+      <div class="sx-opts">
+        <div class="seg" id="sxKinds" role="group" aria-label="What to search"><button type="button" data-k="" aria-pressed="true">Everything</button><button type="button" data-k="day" aria-pressed="false">Days</button><button type="button" data-k="trade" aria-pressed="false">Trades</button><button type="button" data-k="week" aria-pressed="false">Weekly</button><button type="button" data-k="news" aria-pressed="false">News</button></div>
+        <label>From <input type="date" id="sxFrom" aria-label="From date"></label>
+        <label>to <input type="date" id="sxTo" aria-label="To date"></label>
+        <button type="button" class="btn-small" id="sxClearDates" hidden>Clear dates</button>
+      </div>
+    </div>
+    <div class="sx-list" id="sxList" role="listbox" aria-label="Search results"></div>
+    <div class="sx-foot"><span id="sxCount" role="status"></span><span>↑ ↓ move · Enter opens · put "exact words" in quotes</span></div>
+  </div>
+</div>
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Chart full screen" hidden><img id="lightboxImg" alt="Chart full screen"><button type="button" class="lb-btn lb-close" id="lbClose" aria-label="Close full screen">×</button><button type="button" class="lb-btn lb-prev" id="lbPrev" aria-label="Previous chart">‹</button><button type="button" class="lb-btn lb-next" id="lbNext" aria-label="Next chart">›</button><span class="lb-count" id="lbCount"></span></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -1384,6 +1435,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
   function gate(state, extra = "", note = "") {
     const g = $("gate");
     g.hidden = !state;
+    if (state && !$("sx").hidden) { $("sx").hidden = true; document.body.style.overflow = ""; }
     for (const el of document.body.children) if (el !== g && el.tagName !== "SCRIPT") el.inert = !!state;
     if (!state) return;
     const body = {
@@ -4101,6 +4153,227 @@ ${String(h).trim()}`;
       renderSettings();
     } catch (e) { toast(e?.name === "QuotaExceededError" ? "Your disk is full." : "That file isn't an Edge Ledger backup or export."); }
     $("importFile").value = "";
+  });
+
+  // ---------- search (v24) ----------
+  // Searches every day, trade, weekly review and logged news day. All words must appear somewhere in the entry
+  // (any field); "quoted words" must appear together. Case doesn't matter and curly quotes match straight ones.
+  // The index is rebuilt each time search opens, so it always matches what's saved.
+  const fold = (s) => { let o = ""; for (let i = 0; i < s.length; i++) { const c = s[i], l = c.toLowerCase(); o += l.length === 1 ? l : c; } return o.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"').replace(/ /g, " "); };
+  const SX_KIND = { day: "Day", trade: "Trade", week: "Weekly review", news: "Market news" };
+  const SX_PAGE = 100;
+  let sxIndex = [], sxHits = [], sxTerms = [], sxShown = 0, sxAt = -1, sxKind = "", sxTimer = 0, sxBack = null;
+  const sxStr = (v) => (v == null || typeof v === "object" ? "" : String(v)).trim();
+  const sxJoin = (...arrs) => [...new Set(arrs.flat().filter((x) => x != null && typeof x !== "object").map((x) => String(x).trim()).filter(Boolean))].join(", ");
+  function sxEntry(kind, id, date, title, fields) {
+    const f = fields.map(([label, text, at]) => ({ label, text: sxStr(text), at })).filter((x) => x.text).map((x) => ({ ...x, low: fold(x.text) }));
+    date = typeof date === "string" ? date : "";
+    return f.length && /^\d{4}-\d{2}-\d{2}/.test(date) ? { kind, id, date, title, fields: f, all: f.map((x) => x.low).join("\n") } : null;
+  }
+  const sxList = (label, arr, box) => (Array.isArray(arr) ? arr : []).map((v) => [label, v, [box]]);
+  function sxBuild() {
+    const out = [], manyAcc = S.accounts.size > 1;
+    S.days.forEach((d) => out.push(d && sxEntry("day", d.date, d.date, "", [
+      ["Thoughts", d.thoughts ?? d.review, "jThoughts"], ["Plan", d.plan, "jPlan"],
+      ...sxList("Good", d.good, "jGood"), ...sxList("Bad", d.bad, "jBad"),
+      ["Lesson", d.lesson, "jLesson"], ["News notes", d.newsNotes, "jNewsNotes"],
+      ["Feelings", sxJoin(d.feelBefore || [], d.feelAfter || [])], ["News", sxJoin(d.news || [])], ["Markets", sxJoin(d.markets || [])],
+      ["Day", sxJoin([d.result, d.kind, d.restReason, d.bias === "No trade day" ? "" : d.bias, d.grade ? `Grade ${d.grade}` : ""])],
+    ])));
+    S.trades.forEach((t) => {
+      if (!t || !t.id) return;
+      const acc = manyAcc ? S.accounts.get(accOf(t))?.name || "" : "";
+      out.push(sxEntry("trade", t.id, t.date, [t.instrument, t.dir, t.time, acc].filter(Boolean).join(" · "), [
+        ["Notes", t.notes, "tNotes"], ...sxList("Good", t.good, "tGood"), ...sxList("Bad", t.bad, "tBad"),
+        ["Feelings", sxJoin(feelsOf(t, "before"), feelsOf(t, "after"))], ["Mistakes", sxJoin(t.mistakes || [])], ["Tags", sxJoin(t.tags || [])],
+        ["Trade", sxJoin([t.instrument, t.session, setupName(t), t.grade ? `Grade ${t.grade}` : ""])],
+      ]));
+    });
+    S.weeks.forEach((w) => out.push(w && sxEntry("week", w.id, w.id, "", [["Went well", w.well, "wWell"], ["Went wrong", w.wrong, "wWrong"], ["Focus", w.focus, "wFocus"], ["Grade", w.grade ? `Grade ${w.grade}` : ""]])));
+    S.market.forEach((n) => out.push(n && sxEntry("news", n.date, n.date, "", [["Summary", n.summary, "jMarket"], ...(Array.isArray(n.events) ? n.events : []).map((e) => ["Event", [e.time, e.name, e.actual != null ? `actual ${e.actual}` : "", e.forecast != null ? `forecast ${e.forecast}` : "", e.note].filter(Boolean).join(" · "), "jMarket"])])));
+    const order = { day: 0, trade: 1, week: 2, news: 3 };
+    sxIndex = out.filter(Boolean).sort((a, b) => b.date.localeCompare(a.date) || order[a.kind] - order[b.kind] || String(b.title).localeCompare(String(a.title)));
+  }
+  function sxParse(q) {
+    const out = [], re = /"([^"]*)"|(\S+)/g, f = fold(q);
+    let m;
+    while ((m = re.exec(f))) { const t = (m[1] != null ? m[1] : m[2].replace(/^"+|"+$/g, "")).replace(/\s+/g, " ").trim(); if (t) out.push(t); }
+    return [...new Set(out)].sort((a, b) => b.length - a.length);
+  }
+  // Highlighted piece of one field around its first match. fold() keeps string length, so positions line up with the original text.
+  function sxSnip(f, terms) {
+    const low = f.low, text = f.text;
+    let first = -1;
+    terms.forEach((t) => { const i = low.indexOf(t); if (i >= 0 && (first < 0 || i < first)) first = i; });
+    let a = Math.max(0, first - 60);
+    if (a > 0) { const sp = text.lastIndexOf(" ", a); a = sp > first - 90 && sp >= 0 ? sp + 1 : a; }
+    const b = Math.min(text.length, a + 220);
+    const marks = [];
+    terms.forEach((t) => { let i = low.indexOf(t, a); while (i >= 0 && i < b) { marks.push([i, Math.min(b, i + t.length)]); i = low.indexOf(t, i + t.length); } });
+    marks.sort((x, y) => x[0] - y[0]);
+    let html = "", at = a;
+    const piece = (x, y) => esc(text.slice(x, y).replace(/\s+/g, " "));
+    marks.forEach(([x, y]) => { if (y <= at) return; x = Math.max(x, at); html += piece(at, x) + "<mark>" + piece(x, y) + "</mark>"; at = y; });
+    html += piece(at, b);
+    return `<i>${esc(f.label)}:</i> ${a > 0 ? "…" : ""}${html}${b < text.length ? "…" : ""}`;
+  }
+  function sxRun() {
+    const q = $("sxQ").value, from = $("sxFrom").value, to = $("sxTo").value;
+    sxTerms = sxParse(q); sxShown = 0; sxAt = -1;
+    $("sxClearDates").hidden = !from && !to;
+    if (!sxTerms.length) { sxHits = []; return sxDraw(); }
+    sxHits = sxIndex.filter((e) => (!sxKind || e.kind === sxKind) && (!from || e.date >= from) && (!to || e.date <= to) && sxTerms.every((t) => e.all.includes(t)));
+    sxDraw();
+  }
+  function sxHitHtml(e, i) {
+    const fs = e.fields.map((f) => [f, sxTerms.filter((t) => f.low.includes(t)).length]).filter(([, n]) => n).sort((x, y) => y[1] - x[1]).slice(0, 2).map(([f]) => f);
+    e.best = fs[0];
+    const pnl = e.kind === "trade" ? num(S.trades.get(e.id)?.pnl) : null;
+    const when = e.kind === "week" ? `Week of ${fmtDay(e.date, { month: "short", day: "numeric", year: "numeric" })}` : fmtDay(e.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    return `<button type="button" class="sx-hit" role="option" aria-selected="false" data-i="${i}"><div class="sx-top"><strong>${esc(when)}</strong><span class="pill${e.kind === "trade" ? " info" : ""}">${SX_KIND[e.kind]}</span>${e.title ? `<span class="muted">${esc(e.title)}</span>` : ""}${pnl != null ? `<span class="num ${cls(pnl)}">${money(pnl)}</span>` : ""}</div>${fs.map((f) => `<div class="sx-snip">${sxSnip(f, sxTerms)}</div>`).join("")}</button>`;
+  }
+  const sxMonth = (d) => fmtDay(d, { month: "long", year: "numeric" });
+  function sxDraw(more) {
+    const box = $("sxList");
+    if (!sxTerms.length) {
+      const c = { day: 0, trade: 0, week: 0, news: 0 }; sxIndex.forEach((e) => c[e.kind]++);
+      box.innerHTML = `<div class="sx-empty">Type a word to search ${plural(c.day, "journal day")}, ${plural(c.trade, "trade")}, ${plural(c.week, "weekly review")} and ${plural(c.news, "news day")}.<br>Several words find entries that have all of them. Try <strong>fomo</strong>, <strong>moved stop</strong> or <strong>"waited for"</strong>.</div>`;
+      $("sxCount").textContent = ""; return;
+    }
+    if (!sxHits.length) {
+      const narrowed = sxKind || $("sxFrom").value || $("sxTo").value;
+      box.innerHTML = `<div class="sx-empty">Nothing found for <strong>${esc($("sxQ").value.trim())}</strong>.${narrowed ? " Try Everything, or clear the dates." : " Check the spelling, or try fewer words."}</div>`;
+      $("sxCount").textContent = "No results"; return;
+    }
+    const start = more ? sxShown : 0, end = Math.min(sxHits.length, start + SX_PAGE);
+    let html = "", prev = start > 0 ? sxMonth(sxHits[start - 1].date) : "";
+    for (let i = start; i < end; i++) { const m = sxMonth(sxHits[i].date); if (m !== prev) { html += `<div class="sx-month">${esc(m)}</div>`; prev = m; } html += sxHitHtml(sxHits[i], i); }
+    box.querySelector(".sx-more")?.remove();
+    if (more) box.insertAdjacentHTML("beforeend", html); else { box.innerHTML = html; box.scrollTop = 0; }
+    sxShown = end;
+    if (end < sxHits.length) box.insertAdjacentHTML("beforeend", `<button type="button" class="btn-small sx-more" id="sxMore">Show more (${sxHits.length - end} left)</button>`);
+    $("sxCount").textContent = `${plural(sxHits.length, "result")}${end < sxHits.length ? `, showing ${end}` : ""}`;
+    if (!more) sxMove(0);
+  }
+  function sxMove(i) {
+    const items = [...$("sxList").querySelectorAll(".sx-hit")];
+    if (!items.length) { sxAt = -1; return; }
+    sxAt = Math.max(0, Math.min(items.length - 1, i));
+    items.forEach((el, k) => { el.classList.toggle("on", k === sxAt); el.setAttribute("aria-selected", String(k === sxAt)); });
+    if (i !== 0 || sxAt !== 0) items[sxAt].scrollIntoView({ block: "nearest" });
+  }
+  function sxShow() {
+    if (!$("gate").hidden || !$("lightbox").hidden) return;
+    if ($("sx").hidden) { sxBack = document.activeElement; sxBuild(); $("sx").hidden = false; document.body.style.overflow = "hidden"; sxRun(); }
+    $("sxQ").focus(); $("sxQ").select();
+  }
+  function sxHide(restore) {
+    if ($("sx").hidden) return;
+    clearTimeout(sxTimer);
+    $("sx").hidden = true; document.body.style.overflow = "";
+    if (restore && sxBack && sxBack.isConnected) sxBack.focus?.();
+    sxBack = null;
+  }
+  // Puts the caret on the match inside the field, scrolls it into view and selects the words briefly.
+  // The first key you type puts the caret after the words instead of replacing them.
+  function sxCaretTop(el, pos) {
+    const cs = getComputedStyle(el), m = document.createElement("div");
+    ["fontFamily", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth", "tabSize"].forEach((k) => (m.style[k] = cs[k]));
+    Object.assign(m.style, { position: "absolute", visibility: "hidden", top: "0", left: "-9999px", width: el.offsetWidth + "px", boxSizing: "border-box", whiteSpace: "pre-wrap", overflowWrap: "break-word", wordBreak: getComputedStyle(el).wordBreak, borderStyle: "solid" });
+    m.textContent = el.value.slice(0, pos);
+    const mk = document.createElement("span"); mk.textContent = "​"; m.appendChild(mk);
+    document.body.appendChild(m);
+    const y = mk.offsetTop; m.remove();
+    return y;
+  }
+  function sxReveal(at, terms) {
+    let el = null;
+    if (Array.isArray(at)) { const tas = [...($(at[0])?.querySelectorAll("textarea") || [])]; el = tas.find((x) => terms.some((t) => fold(x.value).includes(t))) || null; }
+    else if (at) el = $(at);
+    if (!el) { window.scrollTo(0, 0); return; }
+    for (let d = el.closest("details"); d; d = d.parentElement?.closest("details")) if (!d.open) d.open = true;
+    requestAnimationFrame(() => {
+      if (el.tagName !== "TEXTAREA") {
+        el.scrollIntoView({ block: "center" }); el.classList.add("sx-flash"); setTimeout(() => el.classList.remove("sx-flash"), 1600); return;
+      }
+      const low = fold(el.value); let p = -1, len = 0;
+      terms.forEach((t) => { const i = low.indexOf(t); if (i >= 0 && (p < 0 || i < p)) { p = i; len = t.length; } });
+      el.focus({ preventScroll: true });
+      if (p < 0) { el.scrollIntoView({ block: "center" }); return; }
+      el.setSelectionRange(p, p + len);
+      const y = sxCaretTop(el, p), inner = el.scrollHeight > el.clientHeight + 2;
+      if (inner) el.scrollTop = Math.max(0, y - el.clientHeight / 2);
+      const top = el.getBoundingClientRect().top + window.scrollY + Math.max(0, Math.min(el.clientHeight, inner ? y - el.scrollTop : y));
+      window.scrollTo(0, Math.max(0, top - window.innerHeight / 2));
+      const end = p + len;
+      const NAV = ["Shift", "Control", "Alt", "Meta", "CapsLock", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown", "Escape"];
+      const keep = (e) => {
+        if (el.selectionStart !== p || el.selectionEnd !== end) return off();
+        if (e.type === "keydown" && (NAV.includes(e.key) || ((e.ctrlKey || e.metaKey) && !["v", "V"].includes(e.key)))) return off();
+        if (e.type === "beforeinput") {
+          if (!String(e.inputType).startsWith("insert") || !e.cancelable) return off();
+          const add = e.data ?? e.dataTransfer?.getData("text/plain") ?? "";
+          e.preventDefault(); el.setRangeText(add, end, end, "end"); el.dispatchEvent(new Event("input", { bubbles: true }));
+          return off();
+        }
+        el.setSelectionRange(end, end);
+        off();
+      };
+      const off = () => { ["keydown", "paste", "beforeinput"].forEach((t) => el.removeEventListener(t, keep, true)); el.removeEventListener("blur", off); };
+      ["keydown", "paste", "beforeinput"].forEach((t) => el.addEventListener(t, keep, true)); el.addEventListener("blur", off);
+    });
+  }
+  function sxOpen(i) {
+    const e = sxHits[i]; if (!e) return;
+    if (!$("view-editor").hidden || !$("view-pbeditor").hidden) { toast(`Save or cancel the ${$("view-editor").hidden ? "playbook" : "trade"} you're editing first, then open this result.`, 4000); return; }
+    const terms = sxTerms, at = e.best?.at;
+    sxHide(false);
+    if (e.kind === "trade") {
+      if (!S.trades.has(e.id)) { toast("That trade isn't in your journal anymore."); return; }
+      reviewMode = false; openEditor(e.id);
+    } else if (e.kind === "week") {
+      if ($("view-journal").hidden) showTab("journal");
+      setJournalMode(true); loadWeek(e.id);
+    } else {
+      if ($("view-journal").hidden) showTab("journal");
+      if (!$("jWeekly").hidden) setJournalMode(false);
+      goDay(e.date);
+    }
+    sxReveal(at, terms);
+  }
+  $("searchBtn").addEventListener("click", sxShow);
+  $("sxClose").addEventListener("click", () => sxHide(true));
+  $("sx").addEventListener("mousedown", (e) => { if (e.target === $("sx")) sxHide(true); });
+  $("sxQ").addEventListener("input", () => { clearTimeout(sxTimer); sxTimer = setTimeout(sxRun, sxIndex.length > 3000 ? 120 : 40); });
+  $("sxFrom").addEventListener("change", sxRun);
+  $("sxTo").addEventListener("change", sxRun);
+  $("sxClearDates").addEventListener("click", () => { $("sxFrom").value = ""; $("sxTo").value = ""; sxRun(); $("sxQ").focus(); });
+  $("sxKinds").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-k]"); if (!b) return;
+    sxKind = b.dataset.k;
+    $("sxKinds").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    sxRun(); $("sxQ").focus();
+  });
+  $("sxList").addEventListener("click", (e) => {
+    if (e.target.closest("#sxMore")) { sxDraw(true); $("sxQ").focus(); return; }
+    const h = e.target.closest(".sx-hit"); if (h) sxOpen(+h.dataset.i);
+  });
+  $("sx").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); sxHide(true); return; }
+    const inDate = e.target.type === "date";
+    if (e.key === "ArrowDown" && !inDate) { e.preventDefault(); sxMove(sxAt + 1); }
+    else if (e.key === "ArrowUp" && !inDate) { e.preventDefault(); sxMove(sxAt - 1); }
+    else if (e.key === "Enter" && !e.isComposing && (e.target.id === "sxQ" || e.target.classList.contains("sx-hit"))) {
+      e.preventDefault();
+      if (e.target.classList.contains("sx-hit")) sxOpen(+e.target.dataset.i);
+      else if (sxAt >= 0) { const el = $("sxList").querySelectorAll(".sx-hit")[sxAt]; if (el) sxOpen(+el.dataset.i); }
+    }
+  });
+  // Keep keyboard focus inside the search box while it's open.
+  document.addEventListener("focusin", (e) => { if (!$("sx").hidden && !$("sx").contains(e.target)) $("sxQ").focus(); });
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === "k" || e.key === "K")) { e.preventDefault(); sxShow(); return; }
+    if (e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey && $("sx").hidden && !e.target.closest?.("input, textarea, select, [contenteditable]")) { e.preventDefault(); sxShow(); }
   });
 
   // ---------- boot ----------

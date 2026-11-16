@@ -12,6 +12,7 @@ A trading journal that runs as **one HTML file** in Chrome or Edge. You log trad
 - **Trades:** log entry, stop, target, exit, size, risk and net P&L. It works out R and warns when risk is over your plan. You can also tag mistakes, feelings, playbook rules and chart screenshots. Trades can be imported from a broker CSV, and the delimiter is detected automatically.
 - **Playbooks:** your setups with their rules. Each trade records which rules you actually followed.
 - **Journal:** a pre-market plan and an end-of-day review for each day, plus weekly and monthly reviews.
+- **Search:** press Ctrl+K (or /) to search every day, trade, weekly review and news log at once. Matches are highlighted, and a click opens that day or trade with the words selected.
 - **Insights:** results broken down by hour, by trade number of the day, playbook, instrument, session, feeling, mistake, weekday, conviction, news day and grade. It also shows a "What discipline is worth" chart that compares your real balance with your balance minus the mistake trades.
 - **Prop-firm accounts:** several accounts, each with daily-loss and drawdown limits, a trade limit and payouts. It shows the room left today.
 - **AI coach (optional):** with your own Claude API key, it reads the journal and answers questions like "Where am I leaking money?". Answers stream in as they're written.
