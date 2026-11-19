@@ -1299,6 +1299,10 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
   let pendingDrops = []; // screenshot files to delete once the journal saves
   let lastDiskStamp = 0, pendingWrites = 0, saveChain = Promise.resolve(), saveError = null, backupDay = "";
 
+  // v25: if opening the folder stalls, say which step stalled and offer a way out instead of hanging on "Opening your journal…".
+  let bootStep = "", openSeq = 0;
+  const step = (name) => { bootStep = name; };
+  const within = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("timeout"), { name: "TimeoutError" })), ms))]);
   const idb = {
     open() {
       return new Promise((res, rej) => {
@@ -1434,6 +1438,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
   const testDir = () => window.EDGE_TEST_DIR || null;
   function gate(state, extra = "", note = "") {
     const g = $("gate");
+    step("");
     g.hidden = !state;
     if (state && !$("sx").hidden) { $("sx").hidden = true; document.body.style.overflow = ""; }
     for (const el of document.body.children) if (el !== g && el.tagName !== "SCRIPT") el.inert = !!state;
@@ -1466,7 +1471,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
     let h;
     try { h = await window.showDirectoryPicker({ id: "edge-ledger", mode: "readwrite", startIn: "documents" }); }
     catch (e) { if (e?.name === "AbortError") return; gate("error", e?.message); return; }
-    try { await idb.set("dir", h); } catch {}
+    try { await within(idb.set("dir", h), 4000); } catch {}
     openFolder(h);
   }
   // Settings > Use a different folder. An empty folder can take a copy of the current journal.
@@ -1489,18 +1494,24 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
         } catch (e) { toast(e?.name === "QuotaExceededError" ? "Your disk is full, so the copy stopped. Edge Ledger stayed on your current folder." : "The copy didn't finish, so Edge Ledger stayed on your current folder."); return; }
       }
     }
-    try { await idb.set("dir", h); } catch {}
+    try { await within(idb.set("dir", h), 4000); } catch {}
     openFolder(h);
   }
   async function openFolder(h) {
+    const seq = ++openSeq;
     try {
+      step("opening the screenshots, news and backups folders inside " + (h?.name || "your folder"));
       dir = h; backupDay = ""; lastDiskStamp = 0;
       shotUrls.forEach((u) => URL.revokeObjectURL(u)); shotUrls.clear(); S.ff = new Map();
       shotsDir = await dir.getDirectoryHandle("screenshots", { create: true });
       newsDir = await dir.getDirectoryHandle("news", { create: true });
       backupsDir = await dir.getDirectoryHandle("backups", { create: true });
+      step("reading journal.json in " + (h?.name || "your folder"));
       const res = await loadJournal();
+      step("reading the news folder");
       await loadNews();
+      if (seq !== openSeq) return;
+      step("");
       backend = folderBackend; S.mode = "folder";
       gate(null); render();
       if (res === "new") toast(`Your journal is saved in ${dir.name}`);
@@ -1508,6 +1519,8 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
       else if (res === "unreadable") showNotice("Your journal file couldn't be read and there was no backup. It was set aside in your folder, and a fresh journal was started.");
       afterOpen();
     } catch (e) {
+      if (seq !== openSeq) return;
+      step("");
       dir = null;
       gate("error", e?.name === "NotAllowedError" ? "Chrome didn't give permission to save in that folder." : (e?.message || "Something went wrong opening that folder."));
     }
@@ -1517,17 +1530,29 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
     if (t) return openFolder(await t);
     if (!window.showDirectoryPicker || !window.indexedDB) return gate("unsupported");
     // One open copy at a time, so two tabs never overwrite each other's changes.
+    setTimeout(stuckCheck, 12000);
+    step("checking that Edge Ledger isn't open in another tab");
     if (navigator.locks) {
       const got = await new Promise((res) => navigator.locks.request("edge-ledger-folder", { ifAvailable: true }, (lock) => { res(!!lock); return lock ? new Promise(() => {}) : undefined; }));
       if (!got) return gate("locked");
     }
+    step("looking up the folder Chrome remembers");
     let h = null;
-    try { h = await idb.get("dir"); } catch {}
-    if (!h) return gate("first");
+    try { h = await within(idb.get("dir"), 6000); } catch {}
+    if (!h) { step(""); return gate("first"); }
+    step("asking Chrome for permission to " + (h.name || "your folder"));
     let perm = "prompt";
-    try { perm = await h.queryPermission({ mode: "readwrite" }); } catch {}
+    try { perm = await within(h.queryPermission({ mode: "readwrite" }), 6000); } catch {}
     if (perm === "granted") return openFolder(h);
+    step("");
     gate("reconnect", h.name);
+  }
+  function stuckCheck() {
+    if (!bootStep || S.mode === "folder" || $("gate").hidden) return;
+    $("gateBody").innerHTML = `<h2>Opening your journal is taking too long</h2><p>Chrome got stuck ${esc(bootStep)}.</p>
+      <p class="calc">Try <strong>Reload</strong> first. If it gets stuck again, close every Chrome window and open Edge Ledger again. If that doesn't help, click <strong>Choose my folder</strong> and pick your journal folder (the one with journal.json in it).</p>
+      <div class="actions" style="justify-content:flex-start"><button class="btn-primary" id="gateReload">Reload</button><button id="gatePick">Choose my folder</button></div>`;
+    try { console.warn("[Edge Ledger] stuck: " + bootStep); } catch {}
   }
   async function persist(fn, okMsg) {
     try { await fn(); if (okMsg) toast(okMsg); return true; }
