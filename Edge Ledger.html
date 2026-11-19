@@ -555,7 +555,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-label="Open your journal folder">
   <div class="panel">
     <div class="brandline"><span class="wordmark" aria-label="Edge Ledger">edge<span class="slash" aria-hidden="true">/</span>ledger</span></div>
-    <div class="stack" id="gateBody"><p class="muted">Opening your journal…</p></div>
+    <div class="stack" id="gateBody"><p class="muted">Opening your journal…</p><p class="calc" id="bootStepTxt"></p><pre class="calc" id="bootErr" hidden style="white-space:pre-wrap;color:#f87171;margin:0"></pre></div>
   </div>
 </div>
 
@@ -1151,6 +1151,24 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
+  // v26: show startup errors on screen, so a stuck "Opening your journal…" says why.
+  (function () {
+    const errs = [];
+    function show(msg) {
+      errs.push(String(msg).slice(0, 300));
+      const el = document.getElementById("bootErr");
+      if (el) { el.hidden = false; el.textContent = "Error: " + errs.slice(-4).join("\nError: "); }
+    }
+    window.addEventListener("error", (e) => show((e.message || "error") + (e.lineno ? " (line " + e.lineno + ")" : "")));
+    window.addEventListener("unhandledrejection", (e) => show(e.reason && (e.reason.stack || e.reason.message) || e.reason));
+    setTimeout(() => {
+      const el = document.getElementById("bootStepTxt");
+      if (el && !el.textContent && document.getElementById("bootErr") && !document.getElementById("gate").hidden && /Opening your journal/.test(document.getElementById("gateBody").textContent))
+        el.textContent = "Edge Ledger's code didn't start. Press F12, open Console, and send a screenshot of the red text.";
+    }, 15000);
+  })();
+</script>
+<script>
 (() => {
   // ---------- constants ----------
   const DEFAULT_LISTS = {
@@ -1301,7 +1319,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 
   // v25: if opening the folder stalls, say which step stalled and offer a way out instead of hanging on "Opening your journal…".
   let bootStep = "", openSeq = 0;
-  const step = (name) => { bootStep = name; };
+  const step = (name) => { bootStep = name; const el = $("bootStepTxt"); if (el && name) el.textContent = "Now: " + name + "…"; };
   const within = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error("timeout"), { name: "TimeoutError" })), ms))]);
   const idb = {
     open() {
