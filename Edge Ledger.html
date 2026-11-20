@@ -1151,6 +1151,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
+  // v27: broker imports count one position as one trade (partial closes + add-ons joined).
   // v26: show startup errors on screen, so a stuck "Opening your journal…" says why.
   (function () {
     const errs = [];
@@ -3189,37 +3190,78 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     return b && !a ? "mdy" : "dmy";
   }
   function cleanSymbol(s) { return String(s || "").toUpperCase().replace(/[._#+-].*$/, "").trim(); }
+  // Seconds matter when an add-on opens in the same minute the first part closed.
+  function stampOf(v, order) {
+    const dt = parseDT(v, order); if (!dt) return "";
+    const sec = String(v || "").match(/\d{1,2}:\d{2}:(\d{2})/);
+    return `${dt.date}T${dt.time || "00:00"}:${sec ? sec[1] : "00"}`;
+  }
+  // v27: one position = one trade. Rows that share a position ID (a partial close) are one trade, and so is an
+  // add-on: same market and side, opened while the first part was still open. Lots, P&L and prices are combined.
   function buildImport() {
     const { rows, header, map } = imp, body = rows.slice(imp.headerRow + 1);
     const col = (r, k) => (map[k] != null && map[k] >= 0 ? r[map[k]] : "");
     const order = detectOrder(body.map((r) => col(r, "openTime")));
-    const acc = activeAccount(), out = [], fixes = [];
+    const acc = activeAccount(), out = [], fixes = [], absorb = [];
+    const joinAdds = imp.joinAdds !== false;
     const mine = [...S.trades.values()].filter((t) => accOf(t) === acc.id);
-    const existing = new Map(mine.filter((t) => t.extId).map((t) => [t.extId, t]));
+    const existing = new Map();
+    mine.forEach((t) => [t.extId, ...(Array.isArray(t.extIds) ? t.extIds : [])].forEach((e) => e && !existing.has(e) && existing.set(e, t)));
     const bySlot = new Map(mine.filter((t) => t.source === "import").map((t) => [`${t.date}T${t.time}:${t.instrument}`, t]));
-    let skipped = 0, dupes = 0;
-    const already = [];
+    let skipped = 0, dupes = 0, joined = 0;
+    const already = [], legs = [];
     body.forEach((r, i) => {
       const side = String(col(r, "side")).toLowerCase(), sym = cleanSymbol(col(r, "symbol")), dt = parseDT(col(r, "openTime"), order), profit = num(col(r, "profit"));
       if (!/buy|sell|long|short/.test(side) || !sym || !dt || profit == null) { skipped++; return; }
       const pnl = profit + (num(col(r, "commission")) || 0) + (num(col(r, "swap")) || 0);
       const ticket = String(col(r, "ticket") || "").trim();
-      const extId = `${acc.id}:${ticket || `${dt.date}T${dt.time}:${sym}:${profit}`}`;
-      const old = existing.get(extId) || (!ticket && bySlot.get(`${dt.date}T${dt.time}:${sym}`));
-      if (old) {
+      const open = stampOf(col(r, "openTime"), order), close = stampOf(col(r, "closeTime"), order);
+      legs.push({ i, ticket, sym, dt, open, close, dir: /sell|short/.test(side) ? "Short" : "Long", pnl, profit,
+        extId: `${acc.id}:${ticket || `${dt.date}T${dt.time}:${sym}:${profit}`}`,
+        vol: num(col(r, "volume")), openP: num(col(r, "openPrice")), closeP: num(col(r, "closePrice")), sl: num(col(r, "sl")), tp: num(col(r, "tp")) });
+    });
+    // Group: same position ID first, then add-ons into the position that was open when they were placed.
+    legs.sort((x, y) => x.open.localeCompare(y.open) || x.i - y.i);
+    const groups = [], byTicket = new Map();
+    legs.forEach((l) => {
+      let g = l.ticket ? byTicket.get(l.ticket) : null;
+      if (!g && joinAdds && l.close) g = groups.find((o) => o.sym === l.sym && o.dir === l.dir && o.open <= l.open && l.open < o.close);
+      if (g) { if (!(l.ticket && g.tickets.has(l.ticket))) joined++; g.legs.push(l); if (l.close > g.close) g.close = l.close; }
+      else { g = { sym: l.sym, dir: l.dir, open: l.open, close: l.close, legs: [l], tickets: new Set() }; groups.push(g); }
+      if (l.ticket) { g.tickets.add(l.ticket); byTicket.set(l.ticket, g); }
+    });
+    const fix2 = (x) => (x == null ? "" : String(Math.round(x * 1e5) / 1e5));
+    groups.forEach((g) => {
+      const L = g.legs, f = L[0], vol = L.reduce((a, l) => a + (l.vol || 0), 0), pnl = L.reduce((a, l) => a + l.pnl, 0);
+      const dec = Math.max(0, ...L.flatMap((l) => [l.openP, l.closeP]).filter((x) => x != null).map((x) => (String(x).split(".")[1] || "").length));
+      const avg = (k) => { const v = L.every((l) => l[k] != null) && vol ? L.reduce((a, l) => a + l[k] * (l.vol || 0), 0) / vol : f[k]; return v == null ? null : +v.toFixed(Math.min(dec, 6)); };
+      const extIds = [...new Set(L.map((l) => l.extId))];
+      const factsOf = { size: vol || f.vol != null ? fix2(vol) : "", entry: fix2(avg("openP")), exit: fix2(avg("closeP")), pnl: pnl.toFixed(2),
+        ...(L.length > 1 ? { extIds, legs: L.map((l) => ({ ticket: l.ticket, size: fix2(l.vol), entry: fix2(l.openP), exit: fix2(l.closeP), open: l.open.replace("T", " "), close: l.close.replace("T", " "), pnl: l.pnl.toFixed(2) })) } : {}) };
+      const olds = [...new Set(extIds.map((e) => existing.get(e)).filter(Boolean))];
+      if (!olds.length && !f.ticket) { const s0 = bySlot.get(`${f.dt.date}T${f.dt.time}:${f.sym}`); if (s0) olds.push(s0); }
+      if (olds.length) {
         dupes++;
-        // Re-importing repairs numbers an older version of the reader got wrong, and keeps your notes.
-        if (old !== true && Math.abs((num(old.pnl) || 0) - pnl) > 0.005) fixes.push({ ...old, pnl: pnl.toFixed(2), size: String(num(col(r, "volume")) ?? old.size ?? ""), entry: String(num(col(r, "openPrice")) ?? old.entry ?? ""), exit: String(num(col(r, "closePrice")) ?? old.exit ?? "") });
-        if (old !== true) already.push(fixes.find((f) => f.id === old.id) || old);
+        const keep = olds[0], legsNow = Array.isArray(keep.legs) ? keep.legs.length : 1;
+        // A trade you joined yourself (it already holds more parts than this group): leave it as it is.
+        const keepIds = Array.isArray(keep.extIds) ? keep.extIds : [keep.extId];
+        if (olds.length === 1 && keepIds.length > extIds.length && extIds.every((e) => keepIds.includes(e))) { already.push(keep); return; }
+        // Re-importing repairs numbers an older version got wrong, joins parts imported as separate trades, and keeps your notes.
+        if (olds.length > 1 || Math.abs((num(keep.pnl) || 0) - pnl) > 0.005 || legsNow !== L.length) {
+          let fixed = { ...keep, ...factsOf, size: factsOf.size || keep.size || "", entry: factsOf.entry || keep.entry || "", exit: factsOf.exit || keep.exit || "" };
+          // Parts imported earlier as separate trades: what you wrote on them moves onto this one, then they go.
+          olds.slice(1).forEach((d) => { fixed = { ...mergeTwin(d, fixed, keep.id), mergedFrom: keep.mergedFrom || "" }; absorb.push(d.id); });
+          if (L.length === 1) { delete fixed.extIds; delete fixed.legs; }
+          fixes.push(fixed);
+        }
+        already.push(fixes.find((x) => x.id === keep.id) || keep);
         return;
       }
-      existing.set(extId, true);
-      out.push({ id: uid() + i, extId, accountId: acc.id, source: "import", createdAt: Date.now(), date: dt.date, time: dt.time, instrument: sym, dir: /sell|short/.test(side) ? "Short" : "Long",
-        session: "", setup: "", size: String(num(col(r, "volume")) ?? ""), entry: String(num(col(r, "openPrice")) ?? ""), exit: String(num(col(r, "closePrice")) ?? ""),
-        stop: num(col(r, "sl")) ? String(num(col(r, "sl"))) : "", target: num(col(r, "tp")) ? String(num(col(r, "tp"))) : "", risk: "", pnl: pnl.toFixed(2),
+      out.push({ id: uid() + f.i, extId: f.extId, accountId: acc.id, source: "import", createdAt: Date.now(), date: f.dt.date, time: f.dt.time, instrument: f.sym, dir: f.dir,
+        session: "", setup: "", ...factsOf, stop: f.sl ? String(f.sl) : "", target: f.tp ? String(f.tp) : "", risk: "",
         followedPlan: null, mistakes: [], tags: [], screenshots: [], notes: "" });
     });
-    return { trades: out, fixes, skipped, dupes, merges: findTwins(mine.filter((t) => !t.extId && t.source !== "import"), out, already) };
+    return { trades: out, fixes, absorb, joined, skipped, dupes, merges: findTwins(mine.filter((t) => !t.extId && t.source !== "import"), out, already) };
   }
   // A trade you logged by hand and the same trade in the platform's file: same day, same market, same side of zero and
   // about the same P&L (a hand-typed number is often rounded). Closest pairs win, and each trade pairs once.
@@ -3290,6 +3332,7 @@ ${String(h).trim()}`;
       <div class="table-wrap"><table><thead><tr><th>Merge</th><th>Date</th><th>Market</th><th class="r">You logged</th><th class="r">In the file</th></tr></thead><tbody>${res.merges.map((m) => `<tr><td><input type="checkbox" data-merge="${esc(m.hand.id)}" aria-label="Merge the ${esc(m.hand.date)} ${esc(m.hand.instrument)} trade" ${imp.skipMerge.has(m.hand.id) ? "" : "checked"}></td><td class="num">${esc(m.imp.date)} ${esc(m.imp.time || "")}</td><td>${esc(m.imp.instrument)}${marketKey(m.hand.instrument) === marketKey(m.imp.instrument) && cleanSymbol(m.hand.instrument) !== cleanSymbol(m.imp.instrument) ? ` <span class="muted">(${esc(m.hand.instrument)})</span>` : ""}</td><td class="r num ${cls(num(m.hand.pnl))}">${money(num(m.hand.pnl))}</td><td class="r num ${cls(num(m.imp.pnl))}">${money(num(m.imp.pnl))}${m.isNew ? "" : ' <span class="muted">imported before</span>'}</td></tr>`).join("")}</tbody></table></div></div>` : "";
     const goLabel = [adding.length ? `Import ${plural(adding.length, "trade")}` : "", merging.length ? `merge ${merging.length}` : "", fixesLeft ? `fix ${fixesLeft}` : ""].filter(Boolean).join(", ").replace(/^./, (c) => c.toUpperCase());
     $("impPreview").innerHTML = `<div class="stack"><p>Found <strong>${adding.length}</strong> new trade${adding.length === 1 ? "" : "s"} for <strong>${esc(activeAccount().name)}</strong>, net <span class="num ${cls(s.net)}">${money(s.net)}</span> after commission and swap.${res.dupes ? ` ${res.dupes} already imported${res.fixes.length ? `, and <strong>${res.fixes.length}</strong> of those need their P&amp;L corrected, which this import will do` : ""}.` : ""}${res.skipped ? ` ${res.skipped} row${res.skipped === 1 ? "" : "s"} skipped (balance, deposits or missing data).` : ""}</p>
+      <label class="calc" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="impJoin" ${imp.joinAdds !== false ? "checked" : ""}> Count add-ons and partial closes as one trade${res.joined ? ` (${plural(res.joined, "part")} joined to ${res.joined === 1 ? "its trade" : "their trades"})` : ""}</label>
       ${adding.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th class="r">Lots</th><th class="r">Entry</th><th class="r">Exit</th><th class="r">Net P&amp;L</th></tr></thead><tbody>${adding.slice(0, 8).map((t) => `<tr><td class="num">${esc(t.date)} ${esc(t.time)}</td><td>${esc(t.instrument)}</td><td>${esc(t.dir)}</td><td class="r num">${esc(t.size)}</td><td class="r num">${esc(t.entry)}</td><td class="r num">${esc(t.exit)}</td><td class="r num ${cls(num(t.pnl))}">${money(num(t.pnl))}</td></tr>`).join("")}</tbody></table></div>${adding.length > 8 ? `<p class="calc">and ${adding.length - 8} more</p>` : ""}
       <p class="calc">Imported trades are marked "needs review". Open each one to add your playbook, feelings and notes. They count in your P&amp;L right away and in your discipline score once reviewed.</p>` : ""}
       ${twins}
@@ -3297,7 +3340,7 @@ ${String(h).trim()}`;
     $("impGo")?.addEventListener("click", doImport);
   }
   $("impMapGrid").addEventListener("change", (e) => { const s = e.target.closest("[data-map]"); if (s) { imp.map[s.dataset.map] = +s.value; renderImport(); } });
-  $("impPreview").addEventListener("change", (e) => { const c = e.target.closest("[data-merge]"); if (!c || !imp) return; c.checked ? imp.skipMerge.delete(c.dataset.merge) : imp.skipMerge.add(c.dataset.merge); renderImport(); });
+  $("impPreview").addEventListener("change", (e) => { if (e.target.id === "impJoin" && imp) { imp.joinAdds = e.target.checked; renderImport(); return; } const c = e.target.closest("[data-merge]"); if (!c || !imp) return; c.checked ? imp.skipMerge.delete(c.dataset.merge) : imp.skipMerge.add(c.dataset.merge); renderImport(); });
   $("impDateOrder").addEventListener("change", () => imp && renderImport());
   async function readImport() {
     let text = $("impPaste").value;
@@ -3321,6 +3364,8 @@ ${String(h).trim()}`;
     // One save for each batch. If it fails, the trades stay in the journal and the notice at the top offers Try again.
     try { await backend.putMany("trades", fixes); } catch {}
     fixed = fixes.length;
+    // Parts of one position that were saved as separate trades before (their notes are already on the kept trade).
+    for (const id of res.absorb || []) { try { if (S.trades.has(id)) await backend.del("trades", id); } catch {} }
     // New in the file: your hand-logged trade takes the file's numbers. Imported before: the imported trade takes
     // what you wrote, and the hand-logged copy goes.
     for (const m of merges) {
@@ -3385,7 +3430,7 @@ ${String(h).trim()}`;
     const early = to.startDate ? list.filter((t) => t.date < to.startDate).length : 0;
     moving = true;
     try {
-      if (go.length) await backend.putMany("trades", go.map((t) => ({ ...t, accountId: to.id, extId: movedExt(t, acc.id, to.id) })));
+      if (go.length) await backend.putMany("trades", go.map((t) => ({ ...t, accountId: to.id, extId: movedExt(t, acc.id, to.id), ...(Array.isArray(t.extIds) ? { extIds: t.extIds.map((e) => movedExt({ extId: e }, acc.id, to.id)) } : {}) })));
       // A copy the other account already has: what you wrote on it joins that copy, then it goes.
       if (dupes.length) await backend.putMany("trades", dupes.map((t) => { const twin = twinOf.get(movedExt(t, acc.id, to.id)); return { ...mergeTwin(t, twin, twin.id), mergedFrom: twin.mergedFrom || "" }; }));
       for (const t of dupes) await backend.del("trades", t.id);
