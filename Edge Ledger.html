@@ -599,7 +599,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
         <label>Direction<select id="fDir"><option value="">Long and short</option><option value="Long">Long</option><option value="Short">Short</option><option value="none">Not set</option></select></label>
         <label>Session<select id="fSession"><option value="">Any session</option></select></label>
         <label>Playbook / model<select id="fSetup"><option value="">Any playbook</option></select></label>
-        <label>Result<select id="fResult"><option value="">Wins and losses</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Breakeven / scratched</option></select></label>
+        <label>Result<select id="fResult"><option value="">Any result</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Breakeven</option><option value="scratch">Scratched (closed within ±0.2R)</option></select></label>
         <label>Plan<select id="fPlan"><option value="">Any plan adherence</option><option value="yes">Followed plan</option><option value="no">Broke plan</option><option value="review">Needs review</option></select></label>
         <label>Playbook rules<select id="fRules"><option value="">Any</option><option value="all">All rules met</option><option value="some">Some rules missed</option><option value="none">No checklist</option></select></label>
         <label>Day of the week<select id="fWeekday"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="0">Sunday</option><option value="6">Saturday</option></select></label>
@@ -1040,6 +1040,14 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
           <p class="calc">The dashboard counts your trades left from these, warns you when you hit one, and flags trades over the limit. Leave max trades empty for no limit.</p>
         </div>
         <div class="stack">
+          <span class="flabel">Breakeven</span>
+          <div class="mr-limits">
+            <div class="field"><label for="mrBe">A trade is breakeven within ± this many dollars</label><input id="mrBe" inputmode="decimal" placeholder="5"></div>
+            <button type="button" class="btn-primary" id="mrBeSave">Save</button>
+          </div>
+          <p class="calc">Breakeven trades are counted on their own, not as wins or losses. Win rate is wins ÷ (wins + losses), and avg win / avg loss leave them out. They don't count toward your losses-a-day stop. Applies to all accounts.</p>
+        </div>
+        <div class="stack">
           <span class="flabel">My written rules: your "Before you trade" checklist in the journal</span>
           <div class="stack" id="mrList"></div>
           <form id="mrAdd" class="keyrow"><input id="mrNew" maxlength="300" placeholder="Add a rule, e.g. Only 2 trades a day" aria-label="New rule"><button type="submit">Add rule</button></form>
@@ -1152,6 +1160,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 
 <script>
   // v27: broker imports count one position as one trade (partial closes + add-ons joined).
+  // v28: breakeven class. Net P&L within ±$5 (Settings > My rules) is BE: not a win, not a loss.
   // v26: show startup errors on screen, so a stuck "Opening your journal…" says why.
   (function () {
     const errs = [];
@@ -1846,6 +1855,11 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
   // Closed near zero with a real target still open: the "moved to breakeven too early" pattern.
   const isScratch = (t) => { const r = rOf(t), pr = plannedR(t); return (t.beMoved && (r == null || Math.abs(r) < 0.2)) || (r != null && Math.abs(r) < 0.2 && (pr == null || pr >= 1.5) && num(t.target) != null); };
+  // Breakeven: net P&L within ±band dollars (Settings > My rules, default 5). Kept apart from wins and losses.
+  const beBand = () => { const b = num(S.settings.beBand); return b != null && b >= 0 ? b : 5; };
+  const outcomeOf = (t) => { const p = num(t.pnl); if (p == null) return ""; return Math.abs(p) <= beBand() + 1e-9 ? "be" : p > 0 ? "win" : "loss"; };
+  const isLoss = (t) => outcomeOf(t) === "loss";
+  const fmtBand = () => "±$" + (+beBand().toFixed(2));
   const minutes = (t) => { const m = String(t.time || "").match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
   // Minutes after midnight in New York. Trades typed by hand are already in NY time; imported ones are converted
   // from the platform's time zone set on the account (daylight saving included).
@@ -1874,14 +1888,14 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
         const f = [], prev = ts[i - 1];
         if (maxT && i >= maxT) f.push("Over trade limit");
         if (losses >= maxL) f.push(`After ${maxL}-loss stop`);
-        if (prev && num(prev.pnl) < 0) {
+        if (prev && isLoss(prev)) {
           const gap = nyMinutes(t) != null && nyMinutes(prev) != null ? nyMinutes(t) - nyMinutes(prev) : null;
           if (gap != null && gap <= 30) f.push("Revenge (≤30 min after loss)");
           if (prev.instrument === t.instrument && prev.dir && t.dir && prev.dir !== t.dir) f.push("Flipped direction");
         }
         if (isScratch(t)) f.push("Scratched at breakeven");
         out.set(t.id, f);
-        if (num(t.pnl) < 0) losses++;
+        if (isLoss(t)) losses++;
       });
     });
     return out;
@@ -1896,14 +1910,19 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   const setupName = (t) => S.playbooks.get(t.playbookId)?.name || t.setup || "";
   function summarize(list) {
     const pnls = list.map((t) => num(t.pnl) || 0);
-    const wins = pnls.filter((p) => p > 0), losses = pnls.filter((p) => p < 0);
-    const gross = wins.reduce((a, b) => a + b, 0), grossLoss = -losses.reduce((a, b) => a + b, 0);
+    const oc = list.map(outcomeOf), sum = (a) => a.reduce((x, y) => x + y, 0);
+    const wins = pnls.filter((p, i) => oc[i] === "win"), losses = pnls.filter((p, i) => oc[i] === "loss"), bes = pnls.filter((p, i) => oc[i] === "be");
+    const gross = sum(wins), grossLoss = -sum(losses), grossAll = sum(pnls.filter((p) => p > 0)), grossLossAll = -sum(pnls.filter((p) => p < 0));
+    const decided = wins.length + losses.length;
     const rs = list.map(rOf).filter((r) => r != null);
     const rev = list.filter(reviewed);
     return {
-      n: list.length, net: pnls.reduce((a, b) => a + b, 0), wins: wins.length, losses: losses.length,
-      winRate: list.length ? wins.length / list.length : null,
-      pf: grossLoss > 0 ? gross / grossLoss : wins.length ? Infinity : null,
+      n: list.length, net: pnls.reduce((a, b) => a + b, 0), wins: wins.length, losses: losses.length, be: bes.length, beNet: sum(bes),
+      // Win rate leaves breakevens out (wins / (wins + losses)); winRateAll counts them as not-a-win.
+      winRate: decided ? wins.length / decided : null, winRateAll: decided + bes.length ? wins.length / (decided + bes.length) : null,
+      // Profit factor on every trade's real dollars; pfNoBe leaves breakevens out.
+      pf: grossLossAll > 0 ? grossAll / grossLossAll : grossAll > 0 ? Infinity : null,
+      pfNoBe: grossLoss > 0 ? gross / grossLoss : wins.length ? Infinity : null,
       avgWin: wins.length ? gross / wins.length : null, avgLoss: losses.length ? -grossLoss / losses.length : null,
       avgR: mean(rs), netR: rs.length ? rs.reduce((a, b) => a + b, 0) : null, planRate: rev.length ? rev.filter((t) => t.followedPlan).length / rev.length : null,
     };
@@ -1998,7 +2017,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
       if (f.fDir && (f.fDir === "none" ? !!t.dir : t.dir !== f.fDir)) return false;
       if (f.fSession && t.session !== f.fSession) return false;
       if (f.fSetup && setupName(t) !== f.fSetup) return false;
-      if (f.fResult && !(f.fResult === "win" ? p > 0 : f.fResult === "loss" ? p < 0 : p === 0 || isScratch(t))) return false;
+      if (f.fResult && !(f.fResult === "win" ? outcomeOf(t) === "win" : f.fResult === "loss" ? outcomeOf(t) === "loss" : f.fResult === "be" ? outcomeOf(t) === "be" : isScratch(t))) return false;
       if (f.fPlan && !(f.fPlan === "review" ? !reviewed(t) : f.fPlan === "yes" ? t.followedPlan === true : t.followedPlan === false)) return false;
       if (f.fRules && !(f.fRules === "none" ? !t.rulesTotal : t.rulesTotal && ((t.rulesChecked || []).length >= t.rulesTotal) === (f.fRules === "all"))) return false;
       if (f.fWeekday && dateObj(d).getDay() !== +f.fWeekday) return false;
@@ -2120,10 +2139,10 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const s = summarize(full), fs = summarize(list), bal0 = +acc.startBalance || 0, balance = bal0 + s.net, dsc = discipline(full, acc), on = filterActive();
     $("dashStats").innerHTML = [
       on ? statTile("Net P&L (filtered)", pl(fs), cls(plOf(fs)), `${plural(fs.n, "trade")} · balance ${money(balance, false)}`) : statTile("Balance", money(balance, false), "", `${pl(s)} since start`),
-      statTile("Win rate", fmtPct(fs.winRate), "", `${fs.wins}W · ${fs.losses}L`),
-      statTile("Profit factor", fmtPf(fs.pf), fs.pf != null && fs.pf !== Infinity ? (fs.pf >= 1 ? "gain" : "loss") : ""),
+      statTile("Win rate", fmtPct(fs.winRate), "", `${fs.wins}W · ${fs.losses}L · ${fs.be} BE${fs.be ? ` · ${fmtPct(fs.winRateAll)} with BE` : ""}`),
+      statTile("Profit factor", fmtPf(fs.pf), fs.pf != null && fs.pf !== Infinity ? (fs.pf >= 1 ? "gain" : "loss") : "", fs.be ? `${fmtPf(fs.pfNoBe)} without BE` : ""),
       statTile("Avg R", fmtR(fs.avgR), cls(fs.avgR)),
-      statTile("Avg win : avg loss", fs.avgWin != null && fs.avgLoss ? `${(fs.avgWin / -fs.avgLoss).toFixed(2)} : 1` : "–", fs.avgWin != null && fs.avgLoss ? (fs.avgWin >= -fs.avgLoss ? "gain" : "loss") : "", fs.avgWin != null && fs.avgLoss ? `${money(fs.avgWin, false)} vs ${money(-fs.avgLoss, false)}` : ""),
+      statTile("Avg win : avg loss", fs.avgWin != null && fs.avgLoss ? `${(fs.avgWin / -fs.avgLoss).toFixed(2)} : 1` : "–", fs.avgWin != null && fs.avgLoss ? (fs.avgWin >= -fs.avgLoss ? "gain" : "loss") : "", fs.avgWin != null && fs.avgLoss ? `${money(fs.avgWin, false)} vs ${money(-fs.avgLoss, false)} · BE left out` : ""),
       statTile("Discipline", dsc.score == null ? "–" : String(dsc.score), scoreCls(dsc.score), on ? "out of 100 · all trades" : "out of 100"),
     ].join("");
 
@@ -2216,7 +2235,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     ["ath", "I'm not shorting into all-time highs"],
     ["setup", "Sweep → SMT → structure break → 5m OB/FVG, and the candle has closed"],
     ["risk", "Same risk as always. No full port, no adding while red"],
-    ["be", "Breakeven only at my written rule, not because I'm nervous"],
+    ["be", "Move my stop only if I don't like the price action or a key level is taken, never just because I'm nervous"],
   ];
   const myRules = () => (Array.isArray(S.settings.myRules) ? S.settings.myRules : DEFAULT_GATE.map(([id, text]) => ({ id, text })));
   const gateIds = () => myRules().map((r) => r.id);
@@ -2224,7 +2243,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function dashAlerts(acc, list) {
     if (acc.status && acc.status !== "active") return [];
     const td = today(), tdTrades = list.filter((t) => t.date === td), net = summarize(list).net, bal0 = +acc.startBalance || 0;
-    const todayPnl = tdTrades.reduce((a, t) => a + (num(t.pnl) || 0), 0), lossesToday = tdTrades.filter((t) => num(t.pnl) < 0).length;
+    const todayPnl = tdTrades.reduce((a, t) => a + (num(t.pnl) || 0), 0), lossesToday = tdTrades.filter(isLoss).length;
     const maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0, dailyLim = bal0 * (+acc.dailyLossPct || 0) / 100, maxLim = bal0 * (+acc.maxLossPct || 0) / 100, r1 = plannedRisk(acc);
     const out = [];
     if (maxLim > 0 && -net >= maxLim) out.push(["bad", "This account has reached its max-loss floor."]);
@@ -2253,9 +2272,9 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const td = today();
     // Guardrails
     const tdTrades = list.filter((t) => t.date === td).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-    const lossesToday = tdTrades.filter((t) => num(t.pnl) < 0).length, maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0;
+    const lossesToday = tdTrades.filter(isLoss).length, maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0;
     const bal0 = +acc.startBalance || 0, net = summarize(list).net, room = bal0 * (+acc.maxLossPct || 0) / 100 + Math.min(0, net), r1 = plannedRisk(acc);
-    const lastLoss = [...tdTrades].reverse().find((t) => num(t.pnl) < 0);
+    const lastLoss = [...tdTrades].reverse().find(isLoss);
     const rows = [];
     rows.push(lossesToday >= maxL ? ["bad", `${maxL}-loss rule hit. You're done for today.`, "Your biggest red days all came from trading on after a loss."]
       : ["ok", `${lossesToday} of ${maxL} allowed loss${maxL > 1 ? "es" : ""} today`, maxL === 1 ? "One loss and you walk away." : `${maxL} losses and you walk away.`]);
@@ -2389,14 +2408,16 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
 
   function planCell(t) { return t.followedPlan === false ? '<span class="pill bad">Broke</span>' : t.followedPlan ? '<span class="pill ok">Yes</span>' : '<span class="pill warn">Review</span>'; }
+  const beCls = (t, p) => (outcomeOf(t) === "be" ? "muted" : cls(p));
+  const beTag = (t) => (outcomeOf(t) === "be" ? ` <span class="pill" title="Breakeven: within ${fmtBand()}">BE</span>` : "");
   function tradeTable(list, compact) {
     const head = compact ? `<tr><th>Date</th><th>Instrument</th><th class="r">P&amp;L</th><th class="r">R</th></tr>`
       : `<tr><th>Date</th><th>Instrument</th><th>Side</th><th>Playbook</th><th>Feeling</th><th>Plan</th><th>Rules</th><th>Flags</th><th class="r">Planned</th><th class="r">R</th><th class="r">P&amp;L</th></tr>`;
     const rows = list.map((t) => {
       const p = num(t.pnl), r = rOf(t), shots = (t.screenshots || []).length || (S.days.get(t.date)?.screenshots || []).length ? ` <span class="muted" title="Has screenshots">▣</span>` : "";
       return compact
-        ? `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)}</td><td>${esc(t.instrument)} <span class="muted">${esc(t.dir)}</span>${shots}</td><td class="r num ${cls(p)}">${money(p)}</td><td class="r num ${cls(r)}">${fmtR(r)}</td></tr>`
-        : `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)} <span class="muted">${esc(t.time || "")}</span></td><td>${esc(t.instrument)}${shots}</td><td>${esc(t.dir)}</td><td>${esc(setupName(t) || "–")}</td><td>${esc(feelsOf(t, "before").join(", ") || "–")}</td><td>${planCell(t)}</td><td class="num">${t.rulesTotal ? `${(t.rulesChecked || []).length}/${t.rulesTotal}` : "–"}</td><td>${flagsOf(t).map((f) => `<span class="pill ${f.startsWith("Scratched") ? "warn" : "bad"}">${esc(f)}</span>`).join(" ") || '<span class="muted">–</span>'}</td><td class="r num muted">${plannedR(t) == null ? "–" : plannedR(t).toFixed(1) + "R"}</td><td class="r num ${cls(r)}">${fmtR(r)}</td><td class="r num ${cls(p)}">${money(p)}</td></tr>`;
+        ? `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)}</td><td>${esc(t.instrument)} <span class="muted">${esc(t.dir)}</span>${shots}</td><td class="r num ${beCls(t, p)}">${money(p)}${beTag(t)}</td><td class="r num ${cls(r)}">${fmtR(r)}</td></tr>`
+        : `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)} <span class="muted">${esc(t.time || "")}</span></td><td>${esc(t.instrument)}${shots}</td><td>${esc(t.dir)}</td><td>${esc(setupName(t) || "–")}</td><td>${esc(feelsOf(t, "before").join(", ") || "–")}</td><td>${planCell(t)}</td><td class="num">${t.rulesTotal ? `${(t.rulesChecked || []).length}/${t.rulesTotal}` : "–"}</td><td>${flagsOf(t).map((f) => `<span class="pill ${f.startsWith("Scratched") ? "warn" : "bad"}">${esc(f)}</span>`).join(" ") || '<span class="muted">–</span>'}</td><td class="r num muted">${plannedR(t) == null ? "–" : plannedR(t).toFixed(1) + "R"}</td><td class="r num ${cls(r)}">${fmtR(r)}</td><td class="r num ${beCls(t, p)}">${money(p)}${beTag(t)}</td></tr>`;
     }).join("");
     return `<div class="table-wrap"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
   }
@@ -2406,7 +2427,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const all = accountTrades().reverse(), list = applyFilter(all), fp = fv("fPlan");
     const s = summarize(list), pending = all.filter((t) => !reviewed(t)).length;
     $("tradeTable").innerHTML = list.length
-      ? `<p class="calc" style="margin-bottom:10px">${plural(s.n, "trade")} · net <span class="num ${cls(plOf(s))}">${pl(s)}</span> · win rate ${fmtPct(s.winRate)} · avg ${fmtR(s.avgR)}${pending && fp !== "review" ? ` · <a href="#" id="showPending">${pending} need review</a>` : ""}${list.length < all.length ? ` · <a href="#" class="showAllTrades">filtered: show all ${all.length}</a>` : ""}</p>` + tradeTable(list, false)
+      ? `<p class="calc" style="margin-bottom:10px">${plural(s.n, "trade")} · net <span class="num ${cls(plOf(s))}">${pl(s)}</span> · win rate ${fmtPct(s.winRate)} (${s.wins}W · ${s.losses}L · ${s.be} BE) · avg ${fmtR(s.avgR)}${pending && fp !== "review" ? ` · <a href="#" id="showPending">${pending} need review</a>` : ""}${list.length < all.length ? ` · <a href="#" class="showAllTrades">filtered: show all ${all.length}</a>` : ""}</p>` + tradeTable(list, false)
       : all.length ? `<p class="muted">No trades match these filters. <a href="#" class="showAllTrades">Show all ${all.length}</a></p>` : emptyState("Your trade log is empty", "Log trades as you close them, or import your history from your platform.", true);
     bindRows($("tradeTable"));
     $("showPending")?.addEventListener("click", (e) => { e.preventDefault(); clearFilters(true); $("fPlan").value = "review"; render(); });
@@ -2442,13 +2463,14 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function renderInsights(list) {
     const s = summarize(list);
     let best = 0, worst = 0, cur = 0;
-    list.forEach((t) => { const p = num(t.pnl) || 0; cur = p > 0 ? Math.max(1, cur + 1) : p < 0 ? Math.min(-1, cur - 1) : 0; best = Math.max(best, cur); worst = Math.min(worst, cur); });
+    list.forEach((t) => { const o = outcomeOf(t); if (o === "be") return; cur = o === "win" ? Math.max(1, cur + 1) : o === "loss" ? Math.min(-1, cur - 1) : 0; best = Math.max(best, cur); worst = Math.min(worst, cur); });
     const de = [...dailyPnl(list).entries()].sort((a, b) => b[1] - a[1]), dv = de.map((e) => e[1]);
     const dayOf = (e) => (e ? fmtDay(e[0], { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "");
     $("insightStats").innerHTML = [
-      statTile("Avg win", money(s.avgWin), "gain"), statTile("Avg loss", money(s.avgLoss), "loss"),
+      statTile("Avg win", money(s.avgWin), "gain", "BE left out"), statTile("Avg loss", money(s.avgLoss), "loss", "BE left out"),
+      statTile("Breakeven", String(s.be), "", `within ${fmtBand()} · net ${money(s.beNet, false)}`),
       statTile("Best day", dv.length && de[0][1] > 0 ? money(de[0][1]) : "–", de[0]?.[1] > 0 ? "gain" : "", de[0]?.[1] > 0 ? dayOf(de[0]) : ""), statTile("Worst day", dv.length && de[de.length - 1][1] < 0 ? money(de[de.length - 1][1]) : "–", de[de.length - 1]?.[1] < 0 ? "loss" : "", de[de.length - 1]?.[1] < 0 ? dayOf(de[de.length - 1]) : ""),
-      statTile("Current streak", cur ? `${Math.abs(cur)} ${cur > 0 ? "W" : "L"}` : "–", cls(cur), `Longest ${best}W · ${-worst}L`),
+      statTile("Current streak", cur ? `${Math.abs(cur)} ${cur > 0 ? "W" : "L"}` : "–", cls(cur), `Longest ${best}W · ${-worst}L · BE skipped`),
     ].join("");
     breakdown($("byFlag"), groupBy(list, (t) => (flagsOf(t).filter((f) => !f.startsWith("Scratched")).length ? flagsOf(t).filter((f) => !f.startsWith("Scratched")) : ["Clean (no flag)"])));
     const scr = list.filter(isScratch), given = scr.reduce((a, t) => a + Math.max(0, (plannedR(t) ?? 0) - (rOf(t) ?? 0)), 0), withPr = scr.filter((t) => plannedR(t) != null).length;
@@ -3068,7 +3090,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     return [
       `ACCOUNT: ${acc.name} (${acc.firm}, ${PRESET_NAMES[acc.preset] || "custom"}), start balance $${acc.startBalance}, start date ${acc.startDate || "n/a"}, profit target ${acc.targetPct}%, max daily loss ${acc.dailyLossPct}%, max overall loss ${acc.maxLossPct}%, planned risk ${acc.riskPct}% per trade, max ${acc.maxTrades} trades/day. Today is ${today()}.`,
       `MY RULES: ${myRules().map((r) => r.text).join("; ") || "none written"}.`,
-      `ACCOUNT TOTALS: ${s.n} trades, net $${s.net.toFixed(2)}, win rate ${fmtPct(s.winRate)}, profit factor ${fmtPf(s.pf)}, avg R ${fmtRraw(s.avgR)}, discipline score ${d.score ?? "n/a"}/100.`,
+      `ACCOUNT TOTALS: ${s.n} trades (${s.wins} wins, ${s.losses} losses, ${s.be} breakeven within ${fmtBand()}), net $${s.net.toFixed(2)}, win rate ${fmtPct(s.winRate)} excluding breakevens, profit factor ${fmtPf(s.pf)}, avg R ${fmtRraw(s.avgR)}, discipline score ${d.score ?? "n/a"}/100.`,
       pbs.length ? `PLAYBOOKS:\n${pbs.map((p) => `- ${p.name}: ${p.description || ""} Rules: ${(p.rules || []).join("; ")}`).join("\n")}` : "PLAYBOOKS: none written yet.",
       `TRADES (${scope === "week" ? `week of ${curWeek}` : `latest ${trades.length}`}):\n${trades.map(tradeLine).join("\n") || "none"}`,
       (() => { const ms = [...S.market.values()].filter((m) => m.date >= from).sort((a, b) => a.date.localeCompare(b.date)).slice(-25); return ms.length ? `MARKET LOG:\n${ms.map((m) => `${m.date}: ${m.summary || ""} moves:${Object.entries(m.moves || {}).map(([k, v]) => `${k} ${v}`).join(", ")} events:${(m.events || []).map((e) => `${e.name}${e.actual ? ` ${e.actual}` : ""}${e.forecast ? ` vs ${e.forecast}` : ""}`).join("; ")}`).join("\n")}` : ""; })(),
@@ -4138,6 +4160,7 @@ ${String(h).trim()}`;
   // ---------- settings: my rules ----------
   let mrLimitsSig = "", mrListSig = "", mrDelArmed = "";
   const mrLimitEls = ["mrMaxTrades", "mrMaxLosses", "mrRisk"];
+  let mrBeSig = "";
   function renderMyRules(force) {
     const acc = activeAccount(), rules = myRules();
     $("mrAcct").textContent = `Limits for ${acc.name || "this account"}`;
@@ -4149,6 +4172,7 @@ ${String(h).trim()}`;
       $("mrMaxLosses").value = acc.maxLosses ? acc.maxLosses : "";
       $("mrRisk").value = +acc.riskPct > 0 ? acc.riskPct : "";
     }
+    if ((force || String(beBand()) !== mrBeSig) && document.activeElement?.id !== "mrBe") { mrBeSig = String(beBand()); $("mrBe").value = beBand(); }
     const sig = JSON.stringify([rules, mrDelArmed]);
     if ((force || sig !== mrListSig) && !document.activeElement?.matches("#mrList textarea")) {
       mrListSig = sig;
@@ -4203,6 +4227,12 @@ ${String(h).trim()}`;
     if (await persist(() => backend.put("accounts", a), "Limits saved")) { mrLimitsSig = ""; render(); }
   });
   mrLimitEls.forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") $("mrSave").click(); }));
+  $("mrBeSave").addEventListener("click", async () => {
+    const v = $("mrBe").value.trim(), b = v === "" ? 5 : num(v);
+    if (b == null || !(b >= 0 && b <= 1000)) { toast("Breakeven band should be a dollar amount like 5."); return; }
+    if (await saveSettings({ beBand: b })) { mrBeSig = ""; toast(`Breakeven is now within ±$${+b.toFixed(2)}`); render(); }
+  });
+  $("mrBe").addEventListener("keydown", (e) => { if (e.key === "Enter") $("mrBeSave").click(); });
   document.addEventListener("click", (e) => { if (e.target.closest("[data-mr-goto]")) $("myRulesPanel").scrollIntoView({ behavior: "smooth", block: "start" }); });
 
   // ---------- settings: lists ----------
