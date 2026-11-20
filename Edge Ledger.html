@@ -810,7 +810,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
           <div class="fields">
             <div class="field wide" id="shotField">
               <div class="shots" id="tShots"></div>
-              <div class="stack" id="tDayShotsWrap" hidden><span class="flabel">From this day in the journal</span><div class="shots" id="tDayShots"></div></div>
+              <details class="more" id="tDayShotsWrap" hidden><summary id="tDayShotsSum">This day's journal charts</summary><p class="calc" style="margin:0 0 8px">These belong to the day in your journal, not to this trade. Shown here only to look at.</p><div class="shots" id="tDayShots"></div></details>
               <div class="drop" id="shotDrop">Paste a chart image (Ctrl+V or ⌘V), drop one here, or <label for="shotFile" style="color:var(--accent);cursor:pointer;text-decoration:underline">choose a file</label>.<input type="file" id="shotFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></div>
             </div>
                         <div class="field wide"><label for="tLink">TradingView chart link</label><input id="tLink" type="url" placeholder="https://www.tradingview.com/x/…"></div>
@@ -2748,7 +2748,8 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function renderTradeDayShots() {
     const d = $("tDate").value;
     tradeDayShots = d ? [...(S.days.get(d)?.screenshots || [])] : [];
-    $("tDayShotsWrap").hidden = !tradeDayShots.length;
+    $("tDayShotsWrap").hidden = !tradeDayShots.length; $("tDayShotsWrap").open = false; // closed, so the day's charts never look like this trade's own photos
+    $("tDayShotsSum").textContent = `Show this day's journal charts (${tradeDayShots.length})`;
     fillShots($("tDayShots"), tradeDayShots, "data-day-view");
     $("tDayShots").querySelectorAll("button").forEach((b) => b.remove());
   }
