@@ -236,6 +236,8 @@ textarea.line { min-height: 2.6em; line-height: 1.45; }
 .tag-editor form { display: flex; gap: 6px; }
 
 details.more { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.tpick { display: flex; gap: 4px; }
+.tpick select { flex: 1 1 0; min-width: 0; padding-left: 6px; padding-right: 2px; }
 details.more > summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--muted); list-style-position: inside; }
 details.more[open] > summary { margin-bottom: 12px; }
 .bullets { display: grid; gap: 6px; }
@@ -599,7 +601,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
         <label>Direction<select id="fDir"><option value="">Long and short</option><option value="Long">Long</option><option value="Short">Short</option><option value="none">Not set</option></select></label>
         <label>Session<select id="fSession"><option value="">Any session</option></select></label>
         <label>Playbook / model<select id="fSetup"><option value="">Any playbook</option></select></label>
-        <label>Result<select id="fResult"><option value="">Wins and losses</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Breakeven / scratched</option></select></label>
+        <label>Result<select id="fResult"><option value="">Any result</option><option value="win">Wins</option><option value="loss">Losses</option><option value="be">Breakeven</option><option value="scratch">Scratched (closed within ±0.2R)</option></select></label>
         <label>Plan<select id="fPlan"><option value="">Any plan adherence</option><option value="yes">Followed plan</option><option value="no">Broke plan</option><option value="review">Needs review</option></select></label>
         <label>Playbook rules<select id="fRules"><option value="">Any</option><option value="all">All rules met</option><option value="some">Some rules missed</option><option value="none">No checklist</option></select></label>
         <label>Day of the week<select id="fWeekday"><option value="">Any day</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="0">Sunday</option><option value="6">Saturday</option></select></label>
@@ -757,7 +759,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
           <div class="section-label">The trade</div>
           <div class="fields">
             <div class="field"><label for="tDate">Date</label><input type="date" id="tDate" required></div>
-            <div class="field"><label for="tTime">Entry time</label><input type="time" id="tTime"></div>
+            <div class="field"><label for="tTimeH">Entry time</label><div class="tpick" data-time="tTime"><input type="hidden" id="tTime"><select id="tTimeH" aria-label="Entry time: hour"></select><select aria-label="Entry time: minute"></select><select aria-label="Entry time: AM or PM"><option>AM</option><option>PM</option></select></div></div>
             <div class="field"><label for="tInstrumentPick">Instrument</label><select id="tInstrumentPick"></select><input id="tInstrument" aria-label="Instrument symbol" placeholder="Type the symbol, e.g. NAS100" hidden></div>
             <div class="field"><label for="tDir">Direction</label><select id="tDir"><option value="">Not set</option><option>Long</option><option>Short</option></select></div>
             <div class="field"><label for="tSession">Session</label><select id="tSession"><option value="">Not set</option><option>New York</option><option>London</option><option>Asia</option><option>London/NY overlap</option></select></div>
@@ -787,7 +789,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
               <div class="field"><label for="tSize">Lots</label><input id="tSize" inputmode="decimal"></div>
               <div class="field"><label for="tOrigStop">Original stop</label><input id="tOrigStop" inputmode="decimal" placeholder="Where the idea was wrong"></div>
               <div class="field"><label for="tMfe">Best it got (R)</label><input id="tMfe" inputmode="decimal" placeholder="e.g. 1.8"></div>
-              <div class="field"><label for="tBeTime">Moved to breakeven at</label><input type="time" id="tBeTime"></div>
+              <div class="field"><label for="tBeTimeH">Moved to breakeven at</label><div class="tpick" data-time="tBeTime"><input type="hidden" id="tBeTime"><select id="tBeTimeH" aria-label="Moved to breakeven at: hour"></select><select aria-label="Moved to breakeven at: minute"></select><select aria-label="Moved to breakeven at: AM or PM"><option>AM</option><option>PM</option></select></div></div>
             </div>
           </details>
           <p class="calc" id="tCalc" style="margin-top:8px"></p>
@@ -810,7 +812,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
           <div class="fields">
             <div class="field wide" id="shotField">
               <div class="shots" id="tShots"></div>
-              <div class="stack" id="tDayShotsWrap" hidden><span class="flabel">From this day in the journal</span><div class="shots" id="tDayShots"></div></div>
+              <details class="more" id="tDayShotsWrap" hidden><summary id="tDayShotsSum">This day's journal charts</summary><p class="calc" style="margin:0 0 8px">These belong to the day in your journal, not to this trade. Shown here only to look at.</p><div class="shots" id="tDayShots"></div></details>
               <div class="drop" id="shotDrop">Paste a chart image (Ctrl+V or ⌘V), drop one here, or <label for="shotFile" style="color:var(--accent);cursor:pointer;text-decoration:underline">choose a file</label>.<input type="file" id="shotFile" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden></div>
             </div>
                         <div class="field wide"><label for="tLink">TradingView chart link</label><input id="tLink" type="url" placeholder="https://www.tradingview.com/x/…"></div>
@@ -1040,6 +1042,14 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
           <p class="calc">The dashboard counts your trades left from these, warns you when you hit one, and flags trades over the limit. Leave max trades empty for no limit.</p>
         </div>
         <div class="stack">
+          <span class="flabel">Breakeven</span>
+          <div class="mr-limits">
+            <div class="field"><label for="mrBe">A trade is breakeven within ± this many dollars</label><input id="mrBe" inputmode="decimal" placeholder="5"></div>
+            <button type="button" class="btn-primary" id="mrBeSave">Save</button>
+          </div>
+          <p class="calc">Breakeven trades are counted on their own, not as wins or losses. Win rate is wins ÷ (wins + losses), and avg win / avg loss leave them out. They don't count toward your losses-a-day stop. Applies to all accounts.</p>
+        </div>
+        <div class="stack">
           <span class="flabel">My written rules: your "Before you trade" checklist in the journal</span>
           <div class="stack" id="mrList"></div>
           <form id="mrAdd" class="keyrow"><input id="mrNew" maxlength="300" placeholder="Add a rule, e.g. Only 2 trades a day" aria-label="New rule"><button type="submit">Add rule</button></form>
@@ -1151,6 +1161,8 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
+  // v27: broker imports count one position as one trade (partial closes + add-ons joined).
+  // v28: breakeven class. Net P&L within ±$5 (Settings > My rules) is BE: not a win, not a loss.
   // v26: show startup errors on screen, so a stuck "Opening your journal…" says why.
   (function () {
     const errs = [];
@@ -1224,6 +1236,8 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const mean = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
   const sortKey = (t) => t.date + (t.time || "");
+  // Times are stored as 24-hour "HH:MM" (so they sort); everything on screen shows 12-hour "9:45 AM".
+  const t12 = (s) => String(s ?? "").replace(/\b([01]?\d|2[0-3]):([0-5]\d)(?![\d:]|\s*[AaPp]\.?[Mm]\b)/g, (_, h, m) => `${+h % 12 || 12}:${m} ${+h < 12 ? "AM" : "PM"}`);
   function toast(msg, ms = 2800) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), ms); }
   // The mistakes that keep coming back in the trader's own notebook; always offered, even with a custom list.
   const NOTEBOOK_MISTAKES = ["Early breakeven", "Closed early", "Revenge / extra trade after loss", "Wrong index", "Traded news or news day", "Traded lunch", "Shorted all-time high", "Front-ran the candle", "Full port / oversized", "Bored or emotional"];
@@ -1276,7 +1290,7 @@ tbody tr.click:hover, .item.click:hover { background: var(--sunk); }
     const d = S.days.get(date) || {};
     return [...new Set([...marketEvents(date).map((e) => shortEvent(e.name)), ...autoNews(date), ...(d.news || [])])];
   }
-  const evLine = (e) => `<div><span class="when">${esc(e.time || "")}</span><span>${e.impact === "high" ? "<strong>" : ""}${esc(e.name)}${e.impact === "high" ? "</strong>" : ""}${e.actual != null && e.actual !== "" ? ` · actual <span class="num">${esc(e.actual)}</span>` : ""}${e.forecast ? ` ${e.actual ? "vs" : "· forecast"} <span class="num">${esc(e.forecast)}</span>${e.actual ? " exp." : ""}` : ""}${e.previous ? ` <span class="muted">(prev ${esc(e.previous)})</span>` : ""}${e.note ? ` <span class="muted">${esc(e.note)}</span>` : ""}</span></div>`;
+  const evLine = (e) => `<div><span class="when">${esc(t12(e.time))}</span><span>${e.impact === "high" ? "<strong>" : ""}${esc(e.name)}${e.impact === "high" ? "</strong>" : ""}${e.actual != null && e.actual !== "" ? ` · actual <span class="num">${esc(e.actual)}</span>` : ""}${e.forecast ? ` ${e.actual ? "vs" : "· forecast"} <span class="num">${esc(e.forecast)}</span>${e.actual ? " exp." : ""}` : ""}${e.previous ? ` <span class="muted">(prev ${esc(e.previous)})</span>` : ""}${e.note ? ` <span class="muted">${esc(e.note)}</span>` : ""}</span></div>`;
   function autoMarketHtml(date) {
     const m = S.market.get(date);
     if (!m) {
@@ -1845,6 +1859,11 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
   // Closed near zero with a real target still open: the "moved to breakeven too early" pattern.
   const isScratch = (t) => { const r = rOf(t), pr = plannedR(t); return (t.beMoved && (r == null || Math.abs(r) < 0.2)) || (r != null && Math.abs(r) < 0.2 && (pr == null || pr >= 1.5) && num(t.target) != null); };
+  // Breakeven: net P&L within ±band dollars (Settings > My rules, default 5). Kept apart from wins and losses.
+  const beBand = () => { const b = num(S.settings.beBand); return b != null && b >= 0 ? b : 5; };
+  const outcomeOf = (t) => { const p = num(t.pnl); if (p == null) return ""; return Math.abs(p) <= beBand() + 1e-9 ? "be" : p > 0 ? "win" : "loss"; };
+  const isLoss = (t) => outcomeOf(t) === "loss";
+  const fmtBand = () => "±$" + (+beBand().toFixed(2));
   const minutes = (t) => { const m = String(t.time || "").match(/^(\d{1,2}):(\d{2})/); return m ? +m[1] * 60 + +m[2] : null; };
   // Minutes after midnight in New York. Trades typed by hand are already in NY time; imported ones are converted
   // from the platform's time zone set on the account (daylight saving included).
@@ -1873,14 +1892,14 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
         const f = [], prev = ts[i - 1];
         if (maxT && i >= maxT) f.push("Over trade limit");
         if (losses >= maxL) f.push(`After ${maxL}-loss stop`);
-        if (prev && num(prev.pnl) < 0) {
+        if (prev && isLoss(prev)) {
           const gap = nyMinutes(t) != null && nyMinutes(prev) != null ? nyMinutes(t) - nyMinutes(prev) : null;
           if (gap != null && gap <= 30) f.push("Revenge (≤30 min after loss)");
           if (prev.instrument === t.instrument && prev.dir && t.dir && prev.dir !== t.dir) f.push("Flipped direction");
         }
         if (isScratch(t)) f.push("Scratched at breakeven");
         out.set(t.id, f);
-        if (num(t.pnl) < 0) losses++;
+        if (isLoss(t)) losses++;
       });
     });
     return out;
@@ -1895,14 +1914,19 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   const setupName = (t) => S.playbooks.get(t.playbookId)?.name || t.setup || "";
   function summarize(list) {
     const pnls = list.map((t) => num(t.pnl) || 0);
-    const wins = pnls.filter((p) => p > 0), losses = pnls.filter((p) => p < 0);
-    const gross = wins.reduce((a, b) => a + b, 0), grossLoss = -losses.reduce((a, b) => a + b, 0);
+    const oc = list.map(outcomeOf), sum = (a) => a.reduce((x, y) => x + y, 0);
+    const wins = pnls.filter((p, i) => oc[i] === "win"), losses = pnls.filter((p, i) => oc[i] === "loss"), bes = pnls.filter((p, i) => oc[i] === "be");
+    const gross = sum(wins), grossLoss = -sum(losses), grossAll = sum(pnls.filter((p) => p > 0)), grossLossAll = -sum(pnls.filter((p) => p < 0));
+    const decided = wins.length + losses.length;
     const rs = list.map(rOf).filter((r) => r != null);
     const rev = list.filter(reviewed);
     return {
-      n: list.length, net: pnls.reduce((a, b) => a + b, 0), wins: wins.length, losses: losses.length,
-      winRate: list.length ? wins.length / list.length : null,
-      pf: grossLoss > 0 ? gross / grossLoss : wins.length ? Infinity : null,
+      n: list.length, net: pnls.reduce((a, b) => a + b, 0), wins: wins.length, losses: losses.length, be: bes.length, beNet: sum(bes),
+      // Win rate leaves breakevens out (wins / (wins + losses)); winRateAll counts them as not-a-win.
+      winRate: decided ? wins.length / decided : null, winRateAll: decided + bes.length ? wins.length / (decided + bes.length) : null,
+      // Profit factor on every trade's real dollars; pfNoBe leaves breakevens out.
+      pf: grossLossAll > 0 ? grossAll / grossLossAll : grossAll > 0 ? Infinity : null,
+      pfNoBe: grossLoss > 0 ? gross / grossLoss : wins.length ? Infinity : null,
       avgWin: wins.length ? gross / wins.length : null, avgLoss: losses.length ? -grossLoss / losses.length : null,
       avgR: mean(rs), netR: rs.length ? rs.reduce((a, b) => a + b, 0) : null, planRate: rev.length ? rev.filter((t) => t.followedPlan).length / rev.length : null,
     };
@@ -1997,7 +2021,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
       if (f.fDir && (f.fDir === "none" ? !!t.dir : t.dir !== f.fDir)) return false;
       if (f.fSession && t.session !== f.fSession) return false;
       if (f.fSetup && setupName(t) !== f.fSetup) return false;
-      if (f.fResult && !(f.fResult === "win" ? p > 0 : f.fResult === "loss" ? p < 0 : p === 0 || isScratch(t))) return false;
+      if (f.fResult && !(f.fResult === "win" ? outcomeOf(t) === "win" : f.fResult === "loss" ? outcomeOf(t) === "loss" : f.fResult === "be" ? outcomeOf(t) === "be" : isScratch(t))) return false;
       if (f.fPlan && !(f.fPlan === "review" ? !reviewed(t) : f.fPlan === "yes" ? t.followedPlan === true : t.followedPlan === false)) return false;
       if (f.fRules && !(f.fRules === "none" ? !t.rulesTotal : t.rulesTotal && ((t.rulesChecked || []).length >= t.rulesTotal) === (f.fRules === "all"))) return false;
       if (f.fWeekday && dateObj(d).getDay() !== +f.fWeekday) return false;
@@ -2119,10 +2143,10 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const s = summarize(full), fs = summarize(list), bal0 = +acc.startBalance || 0, balance = bal0 + s.net, dsc = discipline(full, acc), on = filterActive();
     $("dashStats").innerHTML = [
       on ? statTile("Net P&L (filtered)", pl(fs), cls(plOf(fs)), `${plural(fs.n, "trade")} · balance ${money(balance, false)}`) : statTile("Balance", money(balance, false), "", `${pl(s)} since start`),
-      statTile("Win rate", fmtPct(fs.winRate), "", `${fs.wins}W · ${fs.losses}L`),
-      statTile("Profit factor", fmtPf(fs.pf), fs.pf != null && fs.pf !== Infinity ? (fs.pf >= 1 ? "gain" : "loss") : ""),
+      statTile("Win rate", fmtPct(fs.winRate), "", `${fs.wins}W · ${fs.losses}L · ${fs.be} BE${fs.be ? ` · ${fmtPct(fs.winRateAll)} with BE` : ""}`),
+      statTile("Profit factor", fmtPf(fs.pf), fs.pf != null && fs.pf !== Infinity ? (fs.pf >= 1 ? "gain" : "loss") : "", fs.be ? `${fmtPf(fs.pfNoBe)} without BE` : ""),
       statTile("Avg R", fmtR(fs.avgR), cls(fs.avgR)),
-      statTile("Avg win : avg loss", fs.avgWin != null && fs.avgLoss ? `${(fs.avgWin / -fs.avgLoss).toFixed(2)} : 1` : "–", fs.avgWin != null && fs.avgLoss ? (fs.avgWin >= -fs.avgLoss ? "gain" : "loss") : "", fs.avgWin != null && fs.avgLoss ? `${money(fs.avgWin, false)} vs ${money(-fs.avgLoss, false)}` : ""),
+      statTile("Avg win : avg loss", fs.avgWin != null && fs.avgLoss ? `${(fs.avgWin / -fs.avgLoss).toFixed(2)} : 1` : "–", fs.avgWin != null && fs.avgLoss ? (fs.avgWin >= -fs.avgLoss ? "gain" : "loss") : "", fs.avgWin != null && fs.avgLoss ? `${money(fs.avgWin, false)} vs ${money(-fs.avgLoss, false)} · BE left out` : ""),
       statTile("Discipline", dsc.score == null ? "–" : String(dsc.score), scoreCls(dsc.score), on ? "out of 100 · all trades" : "out of 100"),
     ].join("");
 
@@ -2159,7 +2183,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
   function tickClock() {
     const n = nyNow();
-    $("nyClock").innerHTML = `${pad(n.h)}:${pad(n.m)}<small>ET</small>`;
+    $("nyClock").innerHTML = `${n.h % 12 || 12}:${pad(n.m)}<small>${n.h < 12 ? "AM" : "PM"} ET</small>`;
     const weekend = n.weekday === "Sat" || (n.weekday === "Sun" && n.hours < 18) || (n.weekday === "Fri" && n.hours >= 17);
     const live = !weekend && KILLZONES.find(([, a, b]) => n.hours >= a && n.hours < b);
     const next = KILLZONES.map(([name, a]) => [name, a, ((a - n.hours) + 24) % 24]).sort((x, y) => x[2] - y[2])[0];
@@ -2183,7 +2207,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
       t.dailyLim ? `<span class="pill ${room <= t.dailyLim * 0.4 ? "bad" : "ok"}">Daily room ${money(room, false)}</span>` : "",
       t.maxT ? `<span class="pill ${t.todayTrades >= t.maxT ? "warn" : "info"}">${Math.max(0, t.maxT - t.todayTrades)} of ${plural(t.maxT, "trade")} left</span>` : "",
       t.dsc.score != null ? `<span class="pill ${t.dsc.score >= 80 ? "ok" : t.dsc.score >= 60 ? "warn" : "bad"}">Discipline ${t.dsc.score}</span>` : "",
-      ...(S.ff.get(day) || []).map((e) => `<span class="pill bad">⚑ ${esc(e.time ? e.time.replace(" ET", "") + " " : "")}${esc(e.name)}</span>`),
+      ...(S.ff.get(day) || []).map((e) => `<span class="pill bad">⚑ ${esc(e.time ? t12(e.time.replace(" ET", "")) + " " : "")}${esc(e.name)}</span>`),
       ...events.filter((e) => !(S.ff.get(day) || []).some((f) => f.tag === e)).map((e) => `<span class="pill warn">⚑ ${esc(e)}</span>`),
     ].join("");
     tickClock();
@@ -2215,7 +2239,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     ["ath", "I'm not shorting into all-time highs"],
     ["setup", "Sweep → SMT → structure break → 5m OB/FVG, and the candle has closed"],
     ["risk", "Same risk as always. No full port, no adding while red"],
-    ["be", "Breakeven only at my written rule, not because I'm nervous"],
+    ["be", "Move my stop only if I don't like the price action or a key level is taken, never just because I'm nervous"],
   ];
   const myRules = () => (Array.isArray(S.settings.myRules) ? S.settings.myRules : DEFAULT_GATE.map(([id, text]) => ({ id, text })));
   const gateIds = () => myRules().map((r) => r.id);
@@ -2223,7 +2247,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function dashAlerts(acc, list) {
     if (acc.status && acc.status !== "active") return [];
     const td = today(), tdTrades = list.filter((t) => t.date === td), net = summarize(list).net, bal0 = +acc.startBalance || 0;
-    const todayPnl = tdTrades.reduce((a, t) => a + (num(t.pnl) || 0), 0), lossesToday = tdTrades.filter((t) => num(t.pnl) < 0).length;
+    const todayPnl = tdTrades.reduce((a, t) => a + (num(t.pnl) || 0), 0), lossesToday = tdTrades.filter(isLoss).length;
     const maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0, dailyLim = bal0 * (+acc.dailyLossPct || 0) / 100, maxLim = bal0 * (+acc.maxLossPct || 0) / 100, r1 = plannedRisk(acc);
     const out = [];
     if (maxLim > 0 && -net >= maxLim) out.push(["bad", "This account has reached its max-loss floor."]);
@@ -2252,9 +2276,9 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const td = today();
     // Guardrails
     const tdTrades = list.filter((t) => t.date === td).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
-    const lossesToday = tdTrades.filter((t) => num(t.pnl) < 0).length, maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0;
+    const lossesToday = tdTrades.filter(isLoss).length, maxL = +acc.maxLosses || 1, maxT = +acc.maxTrades || 0;
     const bal0 = +acc.startBalance || 0, net = summarize(list).net, room = bal0 * (+acc.maxLossPct || 0) / 100 + Math.min(0, net), r1 = plannedRisk(acc);
-    const lastLoss = [...tdTrades].reverse().find((t) => num(t.pnl) < 0);
+    const lastLoss = [...tdTrades].reverse().find(isLoss);
     const rows = [];
     rows.push(lossesToday >= maxL ? ["bad", `${maxL}-loss rule hit. You're done for today.`, "Your biggest red days all came from trading on after a loss."]
       : ["ok", `${lossesToday} of ${maxL} allowed loss${maxL > 1 ? "es" : ""} today`, maxL === 1 ? "One loss and you walk away." : `${maxL} losses and you walk away.`]);
@@ -2264,7 +2288,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
       rows.push(room <= 0 ? ["bad", "Max-loss floor reached", "This account has hit its maximum loss."]
         : [lossesLeft <= 2 ? "bad" : lossesLeft <= 3 ? "warn" : "ok", `${money(room, false)} above the max-loss floor`, `That's ${lossesLeft} full loss${lossesLeft === 1 ? "" : "es"} at ${money(r1, false)} per trade.${lossesLeft <= 3 ? " Consider half risk until you're back above 4." : ""}`]);
     }
-    if (lastLoss && minutes(lastLoss) != null) rows.push(["warn", `Last loss at ${nyTime(lastLoss)} ET`, "Wait at least 30 minutes and re-run the checklist before anything else."]);
+    if (lastLoss && minutes(lastLoss) != null) rows.push(["warn", `Last loss at ${t12(nyTime(lastLoss))} ET`, "Wait at least 30 minutes and re-run the checklist before anything else."]);
     $("guards").innerHTML = `<div class="list">${rows.map(([c, h, s]) => `<div class="item"><div class="rule-row"><strong>${esc(h)}</strong><span class="pill ${c}">${c === "ok" ? "OK" : c === "warn" ? "Careful" : "Stop"}</span></div>${s ? `<span class="calc">${esc(s)}</span>` : ""}</div>`).join("")}</div>`;
   }
 
@@ -2388,14 +2412,16 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   }
 
   function planCell(t) { return t.followedPlan === false ? '<span class="pill bad">Broke</span>' : t.followedPlan ? '<span class="pill ok">Yes</span>' : '<span class="pill warn">Review</span>'; }
+  const beCls = (t, p) => (outcomeOf(t) === "be" ? "muted" : cls(p));
+  const beTag = (t) => (outcomeOf(t) === "be" ? ` <span class="pill" title="Breakeven: within ${fmtBand()}">BE</span>` : "");
   function tradeTable(list, compact) {
     const head = compact ? `<tr><th>Date</th><th>Instrument</th><th class="r">P&amp;L</th><th class="r">R</th></tr>`
       : `<tr><th>Date</th><th>Instrument</th><th>Side</th><th>Playbook</th><th>Feeling</th><th>Plan</th><th>Rules</th><th>Flags</th><th class="r">Planned</th><th class="r">R</th><th class="r">P&amp;L</th></tr>`;
     const rows = list.map((t) => {
       const p = num(t.pnl), r = rOf(t), shots = (t.screenshots || []).length || (S.days.get(t.date)?.screenshots || []).length ? ` <span class="muted" title="Has screenshots">▣</span>` : "";
       return compact
-        ? `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)}</td><td>${esc(t.instrument)} <span class="muted">${esc(t.dir)}</span>${shots}</td><td class="r num ${cls(p)}">${money(p)}</td><td class="r num ${cls(r)}">${fmtR(r)}</td></tr>`
-        : `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)} <span class="muted">${esc(t.time || "")}</span></td><td>${esc(t.instrument)}${shots}</td><td>${esc(t.dir)}</td><td>${esc(setupName(t) || "–")}</td><td>${esc(feelsOf(t, "before").join(", ") || "–")}</td><td>${planCell(t)}</td><td class="num">${t.rulesTotal ? `${(t.rulesChecked || []).length}/${t.rulesTotal}` : "–"}</td><td>${flagsOf(t).map((f) => `<span class="pill ${f.startsWith("Scratched") ? "warn" : "bad"}">${esc(f)}</span>`).join(" ") || '<span class="muted">–</span>'}</td><td class="r num muted">${plannedR(t) == null ? "–" : plannedR(t).toFixed(1) + "R"}</td><td class="r num ${cls(r)}">${fmtR(r)}</td><td class="r num ${cls(p)}">${money(p)}</td></tr>`;
+        ? `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)}</td><td>${esc(t.instrument)} <span class="muted">${esc(t.dir)}</span>${shots}</td><td class="r num ${beCls(t, p)}">${money(p)}${beTag(t)}</td><td class="r num ${cls(r)}">${fmtR(r)}</td></tr>`
+        : `<tr class="click" data-id="${esc(t.id)}"><td class="num">${esc(t.date)} <span class="muted">${esc(t12(t.time))}</span></td><td>${esc(t.instrument)}${shots}</td><td>${esc(t.dir)}</td><td>${esc(setupName(t) || "–")}</td><td>${esc(feelsOf(t, "before").join(", ") || "–")}</td><td>${planCell(t)}</td><td class="num">${t.rulesTotal ? `${(t.rulesChecked || []).length}/${t.rulesTotal}` : "–"}</td><td>${flagsOf(t).map((f) => `<span class="pill ${f.startsWith("Scratched") ? "warn" : "bad"}">${esc(f)}</span>`).join(" ") || '<span class="muted">–</span>'}</td><td class="r num muted">${plannedR(t) == null ? "–" : plannedR(t).toFixed(1) + "R"}</td><td class="r num ${cls(r)}">${fmtR(r)}</td><td class="r num ${beCls(t, p)}">${money(p)}${beTag(t)}</td></tr>`;
     }).join("");
     return `<div class="table-wrap"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div>`;
   }
@@ -2405,7 +2431,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const all = accountTrades().reverse(), list = applyFilter(all), fp = fv("fPlan");
     const s = summarize(list), pending = all.filter((t) => !reviewed(t)).length;
     $("tradeTable").innerHTML = list.length
-      ? `<p class="calc" style="margin-bottom:10px">${plural(s.n, "trade")} · net <span class="num ${cls(plOf(s))}">${pl(s)}</span> · win rate ${fmtPct(s.winRate)} · avg ${fmtR(s.avgR)}${pending && fp !== "review" ? ` · <a href="#" id="showPending">${pending} need review</a>` : ""}${list.length < all.length ? ` · <a href="#" class="showAllTrades">filtered: show all ${all.length}</a>` : ""}</p>` + tradeTable(list, false)
+      ? `<p class="calc" style="margin-bottom:10px">${plural(s.n, "trade")} · net <span class="num ${cls(plOf(s))}">${pl(s)}</span> · win rate ${fmtPct(s.winRate)} (${s.wins}W · ${s.losses}L · ${s.be} BE) · avg ${fmtR(s.avgR)}${pending && fp !== "review" ? ` · <a href="#" id="showPending">${pending} need review</a>` : ""}${list.length < all.length ? ` · <a href="#" class="showAllTrades">filtered: show all ${all.length}</a>` : ""}</p>` + tradeTable(list, false)
       : all.length ? `<p class="muted">No trades match these filters. <a href="#" class="showAllTrades">Show all ${all.length}</a></p>` : emptyState("Your trade log is empty", "Log trades as you close them, or import your history from your platform.", true);
     bindRows($("tradeTable"));
     $("showPending")?.addEventListener("click", (e) => { e.preventDefault(); clearFilters(true); $("fPlan").value = "review"; render(); });
@@ -2441,13 +2467,14 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function renderInsights(list) {
     const s = summarize(list);
     let best = 0, worst = 0, cur = 0;
-    list.forEach((t) => { const p = num(t.pnl) || 0; cur = p > 0 ? Math.max(1, cur + 1) : p < 0 ? Math.min(-1, cur - 1) : 0; best = Math.max(best, cur); worst = Math.min(worst, cur); });
+    list.forEach((t) => { const o = outcomeOf(t); if (o === "be") return; cur = o === "win" ? Math.max(1, cur + 1) : o === "loss" ? Math.min(-1, cur - 1) : 0; best = Math.max(best, cur); worst = Math.min(worst, cur); });
     const de = [...dailyPnl(list).entries()].sort((a, b) => b[1] - a[1]), dv = de.map((e) => e[1]);
     const dayOf = (e) => (e ? fmtDay(e[0], { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : "");
     $("insightStats").innerHTML = [
-      statTile("Avg win", money(s.avgWin), "gain"), statTile("Avg loss", money(s.avgLoss), "loss"),
+      statTile("Avg win", money(s.avgWin), "gain", "BE left out"), statTile("Avg loss", money(s.avgLoss), "loss", "BE left out"),
+      statTile("Breakeven", String(s.be), "", `within ${fmtBand()} · net ${money(s.beNet, false)}`),
       statTile("Best day", dv.length && de[0][1] > 0 ? money(de[0][1]) : "–", de[0]?.[1] > 0 ? "gain" : "", de[0]?.[1] > 0 ? dayOf(de[0]) : ""), statTile("Worst day", dv.length && de[de.length - 1][1] < 0 ? money(de[de.length - 1][1]) : "–", de[de.length - 1]?.[1] < 0 ? "loss" : "", de[de.length - 1]?.[1] < 0 ? dayOf(de[de.length - 1]) : ""),
-      statTile("Current streak", cur ? `${Math.abs(cur)} ${cur > 0 ? "W" : "L"}` : "–", cls(cur), `Longest ${best}W · ${-worst}L`),
+      statTile("Current streak", cur ? `${Math.abs(cur)} ${cur > 0 ? "W" : "L"}` : "–", cls(cur), `Longest ${best}W · ${-worst}L · BE skipped`),
     ].join("");
     breakdown($("byFlag"), groupBy(list, (t) => (flagsOf(t).filter((f) => !f.startsWith("Scratched")).length ? flagsOf(t).filter((f) => !f.startsWith("Scratched")) : ["Clean (no flag)"])));
     const scr = list.filter(isScratch), given = scr.reduce((a, t) => a + Math.max(0, (plannedR(t) ?? 0) - (rOf(t) ?? 0)), 0), withPr = scr.filter((t) => plannedR(t) != null).length;
@@ -2457,7 +2484,8 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
         <div><span class="label">Target R given up</span><span class="v loss">${withPr ? (hideNums ? MASK : given.toFixed(1) + "R") : "–"}</span><span class="calc">${withPr ? `≈ ${money(given * plannedRisk(), false)} if they had run` : "add the original stop to see this"}</span></div>
       </div><p class="calc">Trades closed within ±0.2R, or marked as moved to breakeven. Your notebook names early breakeven as your most repeated mistake.</p>` : `<p class="muted">No breakeven scratches yet.</p>`;
     const hrs = groupBy(list, (t) => { const h = nyHour(t); return h == null ? "" : `${pad(Math.floor(h))}:00 ET`; });
-    breakdown($("byHour"), hrs, { order: [...hrs.keys()].sort(), r: true });
+    const hrs12 = new Map([...hrs.keys()].sort().map((k) => [k ? t12(k) : k, hrs.get(k)]));
+    breakdown($("byHour"), hrs12, { order: [...hrs12.keys()], r: true });
     breakdown($("byNth"), groupBy(list, (t) => { const day = list.filter((x) => x.date === t.date).sort((a, b) => (a.time || "").localeCompare(b.time || "")); const i = day.indexOf(t); return i === 0 ? "1st trade" : i === 1 ? "2nd trade" : "3rd or later"; }), { order: ["1st trade", "2nd trade", "3rd or later"], r: true });
     breakdown($("bySetup"), groupBy(list, setupName));
     breakdown($("byRules"), groupBy(list, (t) => (t.rulesTotal ? ((t.rulesChecked || []).length >= t.rulesTotal ? "All rules met" : "Some rules missed") : "")));
@@ -2592,6 +2620,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     const last = accountTrades().slice(-1)[0];
     const defaults = { date: today(), instrument: last?.instrument || "NAS100", dir: "Long", session: last?.session || "New York", risk: acc.riskPct ? String(Math.round(acc.startBalance * acc.riskPct / 100)) : "" };
     Object.entries(F).forEach(([k, el]) => ($(el).value = t ? t[k] ?? "" : defaults[k] ?? ""));
+    syncTimePicks();
     syncInstrumentPick();
     $("tEmoBefore").innerHTML = chipList("fb", L.emotions, t ? feelsOf(t, "before") : []);
     $("tEmoAfter").innerHTML = chipList("fa", L.emotions, t ? feelsOf(t, "after") : []);
@@ -2697,6 +2726,25 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   });
   $("tCancel").addEventListener("click", () => { reviewMode = false; showTab(lastTab); }); $("editorClose").addEventListener("click", () => { reviewMode = false; showTab(lastTab); });
   $("newTradeBtn").addEventListener("click", () => openEditor(null));
+  // 12-hour time pickers. The hidden input keeps "HH:MM" (24-hour), so saved trades and sorting stay the same.
+  document.querySelectorAll(".tpick").forEach((w) => {
+    const [h, m, ap] = w.querySelectorAll("select");
+    h.innerHTML = `<option value="">--</option>` + [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((x) => `<option value="${x}">${x}</option>`).join("");
+    m.innerHTML = Array.from({ length: 60 }, (_, i) => `<option>${pad(i)}</option>`).join("");
+    w.addEventListener("change", () => {
+      const out = $(w.dataset.time);
+      out.value = h.value === "" ? "" : `${pad((+h.value % 12) + (ap.value === "PM" ? 12 : 0))}:${m.value}`;
+      m.disabled = ap.disabled = h.value === "";
+    });
+  });
+  function syncTimePicks() {
+    document.querySelectorAll(".tpick").forEach((w) => {
+      const [h, m, ap] = w.querySelectorAll("select"), v = String($(w.dataset.time).value || "").match(/^(\d{1,2}):(\d{2})/);
+      if (v && +v[1] < 24 && +v[2] < 60) { h.value = String(+v[1] % 12 || 12); m.value = v[2]; ap.value = +v[1] < 12 ? "AM" : "PM"; }
+      else { h.value = ""; m.value = "00"; ap.value = "AM"; }
+      m.disabled = ap.disabled = h.value === "";
+    });
+  }
   $("fabTrade").addEventListener("click", () => openEditor(null));
 
   // screenshots: image files in the screenshots/ folder; a trade or journal day keeps their file names
@@ -2725,7 +2773,8 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
   function renderTradeDayShots() {
     const d = $("tDate").value;
     tradeDayShots = d ? [...(S.days.get(d)?.screenshots || [])] : [];
-    $("tDayShotsWrap").hidden = !tradeDayShots.length;
+    $("tDayShotsWrap").hidden = !tradeDayShots.length; $("tDayShotsWrap").open = false; // closed, so the day's charts never look like this trade's own photos
+    $("tDayShotsSum").textContent = `Show this day's journal charts (${tradeDayShots.length})`;
     fillShots($("tDayShots"), tradeDayShots, "data-day-view");
     $("tDayShots").querySelectorAll("button").forEach((b) => b.remove());
   }
@@ -3067,7 +3116,7 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     return [
       `ACCOUNT: ${acc.name} (${acc.firm}, ${PRESET_NAMES[acc.preset] || "custom"}), start balance $${acc.startBalance}, start date ${acc.startDate || "n/a"}, profit target ${acc.targetPct}%, max daily loss ${acc.dailyLossPct}%, max overall loss ${acc.maxLossPct}%, planned risk ${acc.riskPct}% per trade, max ${acc.maxTrades} trades/day. Today is ${today()}.`,
       `MY RULES: ${myRules().map((r) => r.text).join("; ") || "none written"}.`,
-      `ACCOUNT TOTALS: ${s.n} trades, net $${s.net.toFixed(2)}, win rate ${fmtPct(s.winRate)}, profit factor ${fmtPf(s.pf)}, avg R ${fmtRraw(s.avgR)}, discipline score ${d.score ?? "n/a"}/100.`,
+      `ACCOUNT TOTALS: ${s.n} trades (${s.wins} wins, ${s.losses} losses, ${s.be} breakeven within ${fmtBand()}), net $${s.net.toFixed(2)}, win rate ${fmtPct(s.winRate)} excluding breakevens, profit factor ${fmtPf(s.pf)}, avg R ${fmtRraw(s.avgR)}, discipline score ${d.score ?? "n/a"}/100.`,
       pbs.length ? `PLAYBOOKS:\n${pbs.map((p) => `- ${p.name}: ${p.description || ""} Rules: ${(p.rules || []).join("; ")}`).join("\n")}` : "PLAYBOOKS: none written yet.",
       `TRADES (${scope === "week" ? `week of ${curWeek}` : `latest ${trades.length}`}):\n${trades.map(tradeLine).join("\n") || "none"}`,
       (() => { const ms = [...S.market.values()].filter((m) => m.date >= from).sort((a, b) => a.date.localeCompare(b.date)).slice(-25); return ms.length ? `MARKET LOG:\n${ms.map((m) => `${m.date}: ${m.summary || ""} moves:${Object.entries(m.moves || {}).map(([k, v]) => `${k} ${v}`).join(", ")} events:${(m.events || []).map((e) => `${e.name}${e.actual ? ` ${e.actual}` : ""}${e.forecast ? ` vs ${e.forecast}` : ""}`).join("; ")}`).join("\n")}` : ""; })(),
@@ -3189,37 +3238,78 @@ tag must be one of: ${NEWS_TAGS.join(", ")}. Trump and geopolitical items go in 
     return b && !a ? "mdy" : "dmy";
   }
   function cleanSymbol(s) { return String(s || "").toUpperCase().replace(/[._#+-].*$/, "").trim(); }
+  // Seconds matter when an add-on opens in the same minute the first part closed.
+  function stampOf(v, order) {
+    const dt = parseDT(v, order); if (!dt) return "";
+    const sec = String(v || "").match(/\d{1,2}:\d{2}:(\d{2})/);
+    return `${dt.date}T${dt.time || "00:00"}:${sec ? sec[1] : "00"}`;
+  }
+  // v27: one position = one trade. Rows that share a position ID (a partial close) are one trade, and so is an
+  // add-on: same market and side, opened while the first part was still open. Lots, P&L and prices are combined.
   function buildImport() {
     const { rows, header, map } = imp, body = rows.slice(imp.headerRow + 1);
     const col = (r, k) => (map[k] != null && map[k] >= 0 ? r[map[k]] : "");
     const order = detectOrder(body.map((r) => col(r, "openTime")));
-    const acc = activeAccount(), out = [], fixes = [];
+    const acc = activeAccount(), out = [], fixes = [], absorb = [];
+    const joinAdds = imp.joinAdds !== false;
     const mine = [...S.trades.values()].filter((t) => accOf(t) === acc.id);
-    const existing = new Map(mine.filter((t) => t.extId).map((t) => [t.extId, t]));
+    const existing = new Map();
+    mine.forEach((t) => [t.extId, ...(Array.isArray(t.extIds) ? t.extIds : [])].forEach((e) => e && !existing.has(e) && existing.set(e, t)));
     const bySlot = new Map(mine.filter((t) => t.source === "import").map((t) => [`${t.date}T${t.time}:${t.instrument}`, t]));
-    let skipped = 0, dupes = 0;
-    const already = [];
+    let skipped = 0, dupes = 0, joined = 0;
+    const already = [], legs = [];
     body.forEach((r, i) => {
       const side = String(col(r, "side")).toLowerCase(), sym = cleanSymbol(col(r, "symbol")), dt = parseDT(col(r, "openTime"), order), profit = num(col(r, "profit"));
       if (!/buy|sell|long|short/.test(side) || !sym || !dt || profit == null) { skipped++; return; }
       const pnl = profit + (num(col(r, "commission")) || 0) + (num(col(r, "swap")) || 0);
       const ticket = String(col(r, "ticket") || "").trim();
-      const extId = `${acc.id}:${ticket || `${dt.date}T${dt.time}:${sym}:${profit}`}`;
-      const old = existing.get(extId) || (!ticket && bySlot.get(`${dt.date}T${dt.time}:${sym}`));
-      if (old) {
+      const open = stampOf(col(r, "openTime"), order), close = stampOf(col(r, "closeTime"), order);
+      legs.push({ i, ticket, sym, dt, open, close, dir: /sell|short/.test(side) ? "Short" : "Long", pnl, profit,
+        extId: `${acc.id}:${ticket || `${dt.date}T${dt.time}:${sym}:${profit}`}`,
+        vol: num(col(r, "volume")), openP: num(col(r, "openPrice")), closeP: num(col(r, "closePrice")), sl: num(col(r, "sl")), tp: num(col(r, "tp")) });
+    });
+    // Group: same position ID first, then add-ons into the position that was open when they were placed.
+    legs.sort((x, y) => x.open.localeCompare(y.open) || x.i - y.i);
+    const groups = [], byTicket = new Map();
+    legs.forEach((l) => {
+      let g = l.ticket ? byTicket.get(l.ticket) : null;
+      if (!g && joinAdds && l.close) g = groups.find((o) => o.sym === l.sym && o.dir === l.dir && o.open <= l.open && l.open < o.close);
+      if (g) { if (!(l.ticket && g.tickets.has(l.ticket))) joined++; g.legs.push(l); if (l.close > g.close) g.close = l.close; }
+      else { g = { sym: l.sym, dir: l.dir, open: l.open, close: l.close, legs: [l], tickets: new Set() }; groups.push(g); }
+      if (l.ticket) { g.tickets.add(l.ticket); byTicket.set(l.ticket, g); }
+    });
+    const fix2 = (x) => (x == null ? "" : String(Math.round(x * 1e5) / 1e5));
+    groups.forEach((g) => {
+      const L = g.legs, f = L[0], vol = L.reduce((a, l) => a + (l.vol || 0), 0), pnl = L.reduce((a, l) => a + l.pnl, 0);
+      const dec = Math.max(0, ...L.flatMap((l) => [l.openP, l.closeP]).filter((x) => x != null).map((x) => (String(x).split(".")[1] || "").length));
+      const avg = (k) => { const v = L.every((l) => l[k] != null) && vol ? L.reduce((a, l) => a + l[k] * (l.vol || 0), 0) / vol : f[k]; return v == null ? null : +v.toFixed(Math.min(dec, 6)); };
+      const extIds = [...new Set(L.map((l) => l.extId))];
+      const factsOf = { size: vol || f.vol != null ? fix2(vol) : "", entry: fix2(avg("openP")), exit: fix2(avg("closeP")), pnl: pnl.toFixed(2),
+        ...(L.length > 1 ? { extIds, legs: L.map((l) => ({ ticket: l.ticket, size: fix2(l.vol), entry: fix2(l.openP), exit: fix2(l.closeP), open: l.open.replace("T", " "), close: l.close.replace("T", " "), pnl: l.pnl.toFixed(2) })) } : {}) };
+      const olds = [...new Set(extIds.map((e) => existing.get(e)).filter(Boolean))];
+      if (!olds.length && !f.ticket) { const s0 = bySlot.get(`${f.dt.date}T${f.dt.time}:${f.sym}`); if (s0) olds.push(s0); }
+      if (olds.length) {
         dupes++;
-        // Re-importing repairs numbers an older version of the reader got wrong, and keeps your notes.
-        if (old !== true && Math.abs((num(old.pnl) || 0) - pnl) > 0.005) fixes.push({ ...old, pnl: pnl.toFixed(2), size: String(num(col(r, "volume")) ?? old.size ?? ""), entry: String(num(col(r, "openPrice")) ?? old.entry ?? ""), exit: String(num(col(r, "closePrice")) ?? old.exit ?? "") });
-        if (old !== true) already.push(fixes.find((f) => f.id === old.id) || old);
+        const keep = olds[0], legsNow = Array.isArray(keep.legs) ? keep.legs.length : 1;
+        // A trade you joined yourself (it already holds more parts than this group): leave it as it is.
+        const keepIds = Array.isArray(keep.extIds) ? keep.extIds : [keep.extId];
+        if (olds.length === 1 && keepIds.length > extIds.length && extIds.every((e) => keepIds.includes(e))) { already.push(keep); return; }
+        // Re-importing repairs numbers an older version got wrong, joins parts imported as separate trades, and keeps your notes.
+        if (olds.length > 1 || Math.abs((num(keep.pnl) || 0) - pnl) > 0.005 || legsNow !== L.length) {
+          let fixed = { ...keep, ...factsOf, size: factsOf.size || keep.size || "", entry: factsOf.entry || keep.entry || "", exit: factsOf.exit || keep.exit || "" };
+          // Parts imported earlier as separate trades: what you wrote on them moves onto this one, then they go.
+          olds.slice(1).forEach((d) => { fixed = { ...mergeTwin(d, fixed, keep.id), mergedFrom: keep.mergedFrom || "" }; absorb.push(d.id); });
+          if (L.length === 1) { delete fixed.extIds; delete fixed.legs; }
+          fixes.push(fixed);
+        }
+        already.push(fixes.find((x) => x.id === keep.id) || keep);
         return;
       }
-      existing.set(extId, true);
-      out.push({ id: uid() + i, extId, accountId: acc.id, source: "import", createdAt: Date.now(), date: dt.date, time: dt.time, instrument: sym, dir: /sell|short/.test(side) ? "Short" : "Long",
-        session: "", setup: "", size: String(num(col(r, "volume")) ?? ""), entry: String(num(col(r, "openPrice")) ?? ""), exit: String(num(col(r, "closePrice")) ?? ""),
-        stop: num(col(r, "sl")) ? String(num(col(r, "sl"))) : "", target: num(col(r, "tp")) ? String(num(col(r, "tp"))) : "", risk: "", pnl: pnl.toFixed(2),
+      out.push({ id: uid() + f.i, extId: f.extId, accountId: acc.id, source: "import", createdAt: Date.now(), date: f.dt.date, time: f.dt.time, instrument: f.sym, dir: f.dir,
+        session: "", setup: "", ...factsOf, stop: f.sl ? String(f.sl) : "", target: f.tp ? String(f.tp) : "", risk: "",
         followedPlan: null, mistakes: [], tags: [], screenshots: [], notes: "" });
     });
-    return { trades: out, fixes, skipped, dupes, merges: findTwins(mine.filter((t) => !t.extId && t.source !== "import"), out, already) };
+    return { trades: out, fixes, absorb, joined, skipped, dupes, merges: findTwins(mine.filter((t) => !t.extId && t.source !== "import"), out, already) };
   }
   // A trade you logged by hand and the same trade in the platform's file: same day, same market, same side of zero and
   // about the same P&L (a hand-typed number is often rounded). Closest pairs win, and each trade pairs once.
@@ -3287,17 +3377,18 @@ ${String(h).trim()}`;
     const s = summarize(adding);
     const twins = res.merges.length ? `<div class="stack"><div class="section-label">Trades you logged by hand</div>
       <p class="calc">${res.merges.length === 1 ? "This trade looks like one" : `These ${res.merges.length} trades look like ones`} in the file. Merging keeps your review, feelings and notes, and takes the time, prices, lots and P&amp;L from the file, so nothing is counted twice. Untick a trade that's really a different one.</p>
-      <div class="table-wrap"><table><thead><tr><th>Merge</th><th>Date</th><th>Market</th><th class="r">You logged</th><th class="r">In the file</th></tr></thead><tbody>${res.merges.map((m) => `<tr><td><input type="checkbox" data-merge="${esc(m.hand.id)}" aria-label="Merge the ${esc(m.hand.date)} ${esc(m.hand.instrument)} trade" ${imp.skipMerge.has(m.hand.id) ? "" : "checked"}></td><td class="num">${esc(m.imp.date)} ${esc(m.imp.time || "")}</td><td>${esc(m.imp.instrument)}${marketKey(m.hand.instrument) === marketKey(m.imp.instrument) && cleanSymbol(m.hand.instrument) !== cleanSymbol(m.imp.instrument) ? ` <span class="muted">(${esc(m.hand.instrument)})</span>` : ""}</td><td class="r num ${cls(num(m.hand.pnl))}">${money(num(m.hand.pnl))}</td><td class="r num ${cls(num(m.imp.pnl))}">${money(num(m.imp.pnl))}${m.isNew ? "" : ' <span class="muted">imported before</span>'}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+      <div class="table-wrap"><table><thead><tr><th>Merge</th><th>Date</th><th>Market</th><th class="r">You logged</th><th class="r">In the file</th></tr></thead><tbody>${res.merges.map((m) => `<tr><td><input type="checkbox" data-merge="${esc(m.hand.id)}" aria-label="Merge the ${esc(m.hand.date)} ${esc(m.hand.instrument)} trade" ${imp.skipMerge.has(m.hand.id) ? "" : "checked"}></td><td class="num">${esc(m.imp.date)} ${esc(t12(m.imp.time))}</td><td>${esc(m.imp.instrument)}${marketKey(m.hand.instrument) === marketKey(m.imp.instrument) && cleanSymbol(m.hand.instrument) !== cleanSymbol(m.imp.instrument) ? ` <span class="muted">(${esc(m.hand.instrument)})</span>` : ""}</td><td class="r num ${cls(num(m.hand.pnl))}">${money(num(m.hand.pnl))}</td><td class="r num ${cls(num(m.imp.pnl))}">${money(num(m.imp.pnl))}${m.isNew ? "" : ' <span class="muted">imported before</span>'}</td></tr>`).join("")}</tbody></table></div></div>` : "";
     const goLabel = [adding.length ? `Import ${plural(adding.length, "trade")}` : "", merging.length ? `merge ${merging.length}` : "", fixesLeft ? `fix ${fixesLeft}` : ""].filter(Boolean).join(", ").replace(/^./, (c) => c.toUpperCase());
     $("impPreview").innerHTML = `<div class="stack"><p>Found <strong>${adding.length}</strong> new trade${adding.length === 1 ? "" : "s"} for <strong>${esc(activeAccount().name)}</strong>, net <span class="num ${cls(s.net)}">${money(s.net)}</span> after commission and swap.${res.dupes ? ` ${res.dupes} already imported${res.fixes.length ? `, and <strong>${res.fixes.length}</strong> of those need their P&amp;L corrected, which this import will do` : ""}.` : ""}${res.skipped ? ` ${res.skipped} row${res.skipped === 1 ? "" : "s"} skipped (balance, deposits or missing data).` : ""}</p>
-      ${adding.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th class="r">Lots</th><th class="r">Entry</th><th class="r">Exit</th><th class="r">Net P&amp;L</th></tr></thead><tbody>${adding.slice(0, 8).map((t) => `<tr><td class="num">${esc(t.date)} ${esc(t.time)}</td><td>${esc(t.instrument)}</td><td>${esc(t.dir)}</td><td class="r num">${esc(t.size)}</td><td class="r num">${esc(t.entry)}</td><td class="r num">${esc(t.exit)}</td><td class="r num ${cls(num(t.pnl))}">${money(num(t.pnl))}</td></tr>`).join("")}</tbody></table></div>${adding.length > 8 ? `<p class="calc">and ${adding.length - 8} more</p>` : ""}
+      <label class="calc" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="impJoin" ${imp.joinAdds !== false ? "checked" : ""}> Count add-ons and partial closes as one trade${res.joined ? ` (${plural(res.joined, "part")} joined to ${res.joined === 1 ? "its trade" : "their trades"})` : ""}</label>
+      ${adding.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Symbol</th><th>Side</th><th class="r">Lots</th><th class="r">Entry</th><th class="r">Exit</th><th class="r">Net P&amp;L</th></tr></thead><tbody>${adding.slice(0, 8).map((t) => `<tr><td class="num">${esc(t.date)} ${esc(t12(t.time))}</td><td>${esc(t.instrument)}</td><td>${esc(t.dir)}</td><td class="r num">${esc(t.size)}</td><td class="r num">${esc(t.entry)}</td><td class="r num">${esc(t.exit)}</td><td class="r num ${cls(num(t.pnl))}">${money(num(t.pnl))}</td></tr>`).join("")}</tbody></table></div>${adding.length > 8 ? `<p class="calc">and ${adding.length - 8} more</p>` : ""}
       <p class="calc">Imported trades are marked "needs review". Open each one to add your playbook, feelings and notes. They count in your P&amp;L right away and in your discipline score once reviewed.</p>` : ""}
       ${twins}
       ${goLabel ? `<div class="actions" style="justify-content:flex-start"><button class="btn-primary" id="impGo">${goLabel}</button></div>` : res.merges.length ? `<p class="muted">Nothing new to import. Tick a trade above to merge it.</p>` : `<p class="muted">Nothing to import. Check that the columns marked * are matched above.</p>`}</div>`;
     $("impGo")?.addEventListener("click", doImport);
   }
   $("impMapGrid").addEventListener("change", (e) => { const s = e.target.closest("[data-map]"); if (s) { imp.map[s.dataset.map] = +s.value; renderImport(); } });
-  $("impPreview").addEventListener("change", (e) => { const c = e.target.closest("[data-merge]"); if (!c || !imp) return; c.checked ? imp.skipMerge.delete(c.dataset.merge) : imp.skipMerge.add(c.dataset.merge); renderImport(); });
+  $("impPreview").addEventListener("change", (e) => { if (e.target.id === "impJoin" && imp) { imp.joinAdds = e.target.checked; renderImport(); return; } const c = e.target.closest("[data-merge]"); if (!c || !imp) return; c.checked ? imp.skipMerge.delete(c.dataset.merge) : imp.skipMerge.add(c.dataset.merge); renderImport(); });
   $("impDateOrder").addEventListener("change", () => imp && renderImport());
   async function readImport() {
     let text = $("impPaste").value;
@@ -3321,6 +3412,8 @@ ${String(h).trim()}`;
     // One save for each batch. If it fails, the trades stay in the journal and the notice at the top offers Try again.
     try { await backend.putMany("trades", fixes); } catch {}
     fixed = fixes.length;
+    // Parts of one position that were saved as separate trades before (their notes are already on the kept trade).
+    for (const id of res.absorb || []) { try { if (S.trades.has(id)) await backend.del("trades", id); } catch {} }
     // New in the file: your hand-logged trade takes the file's numbers. Imported before: the imported trade takes
     // what you wrote, and the hand-logged copy goes.
     for (const m of merges) {
@@ -3385,7 +3478,7 @@ ${String(h).trim()}`;
     const early = to.startDate ? list.filter((t) => t.date < to.startDate).length : 0;
     moving = true;
     try {
-      if (go.length) await backend.putMany("trades", go.map((t) => ({ ...t, accountId: to.id, extId: movedExt(t, acc.id, to.id) })));
+      if (go.length) await backend.putMany("trades", go.map((t) => ({ ...t, accountId: to.id, extId: movedExt(t, acc.id, to.id), ...(Array.isArray(t.extIds) ? { extIds: t.extIds.map((e) => movedExt({ extId: e }, acc.id, to.id)) } : {}) })));
       // A copy the other account already has: what you wrote on it joins that copy, then it goes.
       if (dupes.length) await backend.putMany("trades", dupes.map((t) => { const twin = twinOf.get(movedExt(t, acc.id, to.id)); return { ...mergeTwin(t, twin, twin.id), mergedFrom: twin.mergedFrom || "" }; }));
       for (const t of dupes) await backend.del("trades", t.id);
@@ -3855,7 +3948,7 @@ ${String(h).trim()}`;
     const s = summarize(res.trades);
     const noPl = !(notion.map.pnl >= 0);
     $("notionPreview").innerHTML = `<div class="stack">${noPl ? `<p><strong>No P/L column is matched.</strong> Pick it in "P/L ($)" above, or every row is saved as a note instead of a trade.</p>` : ""}<p>Found <strong>${plural(res.trades.length, "new trade")}</strong>, net <span class="num ${cls(s.net)}">${money(s.net)}</span>.${res.dupes ? ` ${res.dupes} already brought in.` : ""}${res.noteDone ? ` ${plural(res.noteDone, "note")} already in the journal.` : ""}${res.dayNotes.length ? ` ${plural(res.dayNoteRows, "row")} without a P/L${$("notionMock").checked ? "" : " or marked mock, backtest or BE"} will be saved as notes on ${plural(res.dayNotes.length, "day")} in the journal.` : ""}${res.noPnl - res.dayNoteRows - res.noteDone > 0 ? ` ${plural(res.noPnl - res.dayNoteRows - res.noteDone, "row")} without a P/L ${res.noPnl - res.dayNoteRows - res.noteDone === 1 ? "is" : "are"} left out, because ${res.noPnl - res.dayNoteRows - res.noteDone === 1 ? "its day already has" : "their days already have"} notes or ${res.noPnl - res.dayNoteRows - res.noteDone === 1 ? "it is" : "they are"} empty.` : ""}${res.skipped ? ` ${plural(res.skipped, "row")} had no date I could read.` : ""}</p>
-      ${res.trades.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Market</th><th>Side</th><th>Setup</th><th class="r">P/L</th><th>Notes</th></tr></thead><tbody>${res.trades.slice(0, 10).map((t) => `<tr><td class="num">${esc(t.date)} ${esc(t.time)}</td><td>${esc(t.instrument)}</td><td>${esc(t.dir || "–")}</td><td>${esc(t.setup || "–")}</td><td class="r num ${cls(num(t.pnl))}">${money(num(t.pnl))}</td><td style="white-space:normal;max-width:360px"><span class="clamp muted" style="font-size:.85rem">${esc(t.notes || "–")}</span></td></tr>`).join("")}</tbody></table></div>${res.trades.length > 10 ? `<p class="calc">and ${res.trades.length - 10} more</p>` : ""}` : ""}
+      ${res.trades.length ? `<div class="table-wrap"><table><thead><tr><th>Date</th><th>Market</th><th>Side</th><th>Setup</th><th class="r">P/L</th><th>Notes</th></tr></thead><tbody>${res.trades.slice(0, 10).map((t) => `<tr><td class="num">${esc(t.date)} ${esc(t12(t.time))}</td><td>${esc(t.instrument)}</td><td>${esc(t.dir || "–")}</td><td>${esc(t.setup || "–")}</td><td class="r num ${cls(num(t.pnl))}">${money(num(t.pnl))}</td><td style="white-space:normal;max-width:360px"><span class="clamp muted" style="font-size:.85rem">${esc(t.notes || "–")}</span></td></tr>`).join("")}</tbody></table></div>${res.trades.length > 10 ? `<p class="calc">and ${res.trades.length - 10} more</p>` : ""}` : ""}
       ${res.trades.length || res.dayNotes.length ? `<div class="field" style="max-width:420px"><label for="notionAcct">Put the trades in</label><select id="notionAcct"></select></div>
       <div class="actions" style="justify-content:flex-start"><button class="btn-primary" id="notionGo">Bring in ${plural(res.trades.length, "trade")}${res.dayNotes.length ? ` and ${plural(res.dayNotes.length, "note")}` : ""}</button></div>` : `<p class="muted">Nothing to bring in. Check that Date and P/L are matched above.</p>`}</div>`;
     if ($("notionAcct")) importAccountOptions($("notionAcct"));
@@ -4093,6 +4186,7 @@ ${String(h).trim()}`;
   // ---------- settings: my rules ----------
   let mrLimitsSig = "", mrListSig = "", mrDelArmed = "";
   const mrLimitEls = ["mrMaxTrades", "mrMaxLosses", "mrRisk"];
+  let mrBeSig = "";
   function renderMyRules(force) {
     const acc = activeAccount(), rules = myRules();
     $("mrAcct").textContent = `Limits for ${acc.name || "this account"}`;
@@ -4104,6 +4198,7 @@ ${String(h).trim()}`;
       $("mrMaxLosses").value = acc.maxLosses ? acc.maxLosses : "";
       $("mrRisk").value = +acc.riskPct > 0 ? acc.riskPct : "";
     }
+    if ((force || String(beBand()) !== mrBeSig) && document.activeElement?.id !== "mrBe") { mrBeSig = String(beBand()); $("mrBe").value = beBand(); }
     const sig = JSON.stringify([rules, mrDelArmed]);
     if ((force || sig !== mrListSig) && !document.activeElement?.matches("#mrList textarea")) {
       mrListSig = sig;
@@ -4158,6 +4253,12 @@ ${String(h).trim()}`;
     if (await persist(() => backend.put("accounts", a), "Limits saved")) { mrLimitsSig = ""; render(); }
   });
   mrLimitEls.forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") $("mrSave").click(); }));
+  $("mrBeSave").addEventListener("click", async () => {
+    const v = $("mrBe").value.trim(), b = v === "" ? 5 : num(v);
+    if (b == null || !(b >= 0 && b <= 1000)) { toast("Breakeven band should be a dollar amount like 5."); return; }
+    if (await saveSettings({ beBand: b })) { mrBeSig = ""; toast(`Breakeven is now within ±$${+b.toFixed(2)}`); render(); }
+  });
+  $("mrBe").addEventListener("keydown", (e) => { if (e.key === "Enter") $("mrBeSave").click(); });
   document.addEventListener("click", (e) => { if (e.target.closest("[data-mr-goto]")) $("myRulesPanel").scrollIntoView({ behavior: "smooth", block: "start" }); });
 
   // ---------- settings: lists ----------
@@ -4226,14 +4327,14 @@ ${String(h).trim()}`;
     S.trades.forEach((t) => {
       if (!t || !t.id) return;
       const acc = manyAcc ? S.accounts.get(accOf(t))?.name || "" : "";
-      out.push(sxEntry("trade", t.id, t.date, [t.instrument, t.dir, t.time, acc].filter(Boolean).join(" · "), [
+      out.push(sxEntry("trade", t.id, t.date, [t.instrument, t.dir, t12(t.time), acc].filter(Boolean).join(" · "), [
         ["Notes", t.notes, "tNotes"], ...sxList("Good", t.good, "tGood"), ...sxList("Bad", t.bad, "tBad"),
         ["Feelings", sxJoin(feelsOf(t, "before"), feelsOf(t, "after"))], ["Mistakes", sxJoin(t.mistakes || [])], ["Tags", sxJoin(t.tags || [])],
         ["Trade", sxJoin([t.instrument, t.session, setupName(t), t.grade ? `Grade ${t.grade}` : ""])],
       ]));
     });
     S.weeks.forEach((w) => out.push(w && sxEntry("week", w.id, w.id, "", [["Went well", w.well, "wWell"], ["Went wrong", w.wrong, "wWrong"], ["Focus", w.focus, "wFocus"], ["Grade", w.grade ? `Grade ${w.grade}` : ""]])));
-    S.market.forEach((n) => out.push(n && sxEntry("news", n.date, n.date, "", [["Summary", n.summary, "jMarket"], ...(Array.isArray(n.events) ? n.events : []).map((e) => ["Event", [e.time, e.name, e.actual != null ? `actual ${e.actual}` : "", e.forecast != null ? `forecast ${e.forecast}` : "", e.note].filter(Boolean).join(" · "), "jMarket"])])));
+    S.market.forEach((n) => out.push(n && sxEntry("news", n.date, n.date, "", [["Summary", n.summary, "jMarket"], ...(Array.isArray(n.events) ? n.events : []).map((e) => ["Event", [t12(e.time), e.name, e.actual != null ? `actual ${e.actual}` : "", e.forecast != null ? `forecast ${e.forecast}` : "", e.note].filter(Boolean).join(" · "), "jMarket"])])));
     const order = { day: 0, trade: 1, week: 2, news: 3 };
     sxIndex = out.filter(Boolean).sort((a, b) => b.date.localeCompare(a.date) || order[a.kind] - order[b.kind] || String(b.title).localeCompare(String(a.title)));
   }
